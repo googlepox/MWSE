@@ -439,6 +439,7 @@ namespace mwse::lua {
 		// Create the base of API tables.
 		auto luaMWSE = luaState.create_named_table("mwse");
 		luaMWSE.create_named("activeLuaMods");
+		luaMWSE.create_named_table("idCache");
 		luaState.create_named_table("mwscript");
 
 		// Bind config.
@@ -4345,7 +4346,7 @@ namespace mwse::lua {
 
 	//
 	// Patch: Modifiable physical hit detection cone and weapon reach;
-	// 
+	//
 
 	static float attackReach_saved, fCombatAngleXY_saved, fCombatAngleZ_saved;
 

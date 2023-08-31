@@ -253,6 +253,7 @@ namespace TES3 {
 		bool isItem() const;
 		bool isWeaponOrAmmo() const;
 		const char* getSourceFilename() const;
+		const char* getObjectIDLower() const;
 
 		bool getLinksResolved() const;
 		void setLinksResolved(bool value);

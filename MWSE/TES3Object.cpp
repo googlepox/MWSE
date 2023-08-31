@@ -161,6 +161,19 @@ namespace TES3 {
 		return nullptr;
 	}
 
+	const char* BaseObject::getObjectIDLower() const {
+		auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
+		auto& state = stateHandle.state;
+		auto idCache = state["mwse"]["idCache"];
+
+		const char* id = vTable.base->getObjectID(this);
+		auto lowerId = idCache[id];
+		if (lowerId == nullptr) {
+			idCache[id] = state["string"]["lower"](id);
+		}
+		return idCache[id];
+	}
+
 	bool BaseObject::getLinksResolved() const {
 		return BIT_TEST(objectFlags, TES3::ObjectFlag::LinksResolvedBit);
 	}

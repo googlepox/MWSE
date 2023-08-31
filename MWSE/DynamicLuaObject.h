@@ -2,7 +2,7 @@
 
 /*
 	Taken from the Sol2 documentation for dynamic objects:
-	https://github.com/ThePhD/sol2/blob/develop/examples/dynamic_object.cpp
+	https://github.com/ThePhD/sol2/blob/develop/examples/source/dynamic_object.cpp
 
 	Structures that inherit this also need to implement the following definitions in
 	their new_usertype call:
