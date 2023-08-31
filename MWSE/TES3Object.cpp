@@ -171,7 +171,7 @@ namespace TES3 {
 		if (lowerId == nullptr) {
 			idCache[id] = state["string"]["lower"](id);
 		}
-		return idCache[id];
+		return idCache[id].as<std::string>().c_str();
 	}
 
 	bool BaseObject::getLinksResolved() const {

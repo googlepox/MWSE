@@ -439,7 +439,7 @@ namespace mwse::lua {
 		// Create the base of API tables.
 		auto luaMWSE = luaState.create_named_table("mwse");
 		luaMWSE.create_named("activeLuaMods");
-		luaMWSE.create_named_table("idCache");
+		luaMWSE.create_named("idCache");
 		luaState.create_named_table("mwscript");
 
 		// Bind config.
