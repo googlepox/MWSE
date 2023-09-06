@@ -161,7 +161,7 @@ namespace TES3 {
 		return nullptr;
 	}
 
-	const char* BaseObject::getObjectIDLower() const {
+	std::string BaseObject::getObjectIDLower() const {
 		auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
 		auto& state = stateHandle.state;
 		auto idCache = state["mwse"]["idCache"];
@@ -172,7 +172,7 @@ namespace TES3 {
 			idCache[id] = state["string"]["lower"](id);
 			lowerId = idCache[id];
 		}
-		return lowerId.c_str();
+		return lowerId;
 	}
 
 	bool BaseObject::getLinksResolved() const {
