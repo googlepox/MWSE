@@ -167,11 +167,12 @@ namespace TES3 {
 		auto idCache = state["mwse"]["idCache"];
 
 		const char* id = vTable.base->getObjectID(this);
-		auto lowerId = idCache[id];
-		if (lowerId == nullptr) {
+		std::string lowerId = idCache[id];
+		if (lowerId.empty()) {
 			idCache[id] = state["string"]["lower"](id);
+			lowerId = idCache[id];
 		}
-		return idCache[id].as<std::string>().c_str();
+		return lowerId.c_str();
 	}
 
 	bool BaseObject::getLinksResolved() const {
