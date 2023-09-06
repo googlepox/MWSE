@@ -53,6 +53,7 @@
 #include "BitUtil.h"
 #include "LuaUtil.h"
 #include "MemoryUtil.h"
+#include "StringUtil.h"
 
 #include "LuaManager.h"
 #include "LuaObjectInvalidatedEvent.h"
@@ -169,8 +170,9 @@ namespace TES3 {
 		const char* id = vTable.base->getObjectID(this);
 		std::string lowerId = idCache[id];
 		if (lowerId.empty()) {
-			idCache[id] = state["string"]["lower"](id);
-			lowerId = idCache[id];
+			lowerId = id;
+			mwse::string::to_lower(lowerId);
+			idCache[id] = lowerId;
 		}
 		return lowerId;
 	}
