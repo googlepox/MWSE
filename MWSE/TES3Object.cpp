@@ -162,7 +162,7 @@ namespace TES3 {
 		return nullptr;
 	}
 
-	std::string BaseObject::getObjectIDLower() const {
+	sol::optional<std::string> BaseObject::getObjectIDLower() const {
 		/* 1. caching as lua table
 			- pure string.lower() on Lua is faster by roughly 30 %
 		auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
@@ -178,9 +178,21 @@ namespace TES3 {
 		}
 		return lowerId;
 		*/
+		/* 2. Only c++ implementation
+			- pure string.lower() on Lua is faster by roughly 15 %
 		std::string id = vTable.base->getObjectID(this);
 		mwse::string::to_lower(id);
 		return id;
+		*/
+		auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
+		auto& state = stateHandle.state;
+		sol::protected_function getId = state["getId"];
+		const char* id = vTable.base->getObjectID(this);
+
+		sol::optional<std::string> maybeResult = getId(id);
+		if (maybeResult) {
+			return maybeResult;
+		}
 	}
 
 	bool BaseObject::getLinksResolved() const {

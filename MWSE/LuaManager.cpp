@@ -441,6 +441,19 @@ namespace mwse::lua {
 		luaMWSE.create_named("activeLuaMods");
 		luaMWSE.create_named("idCache");
 		luaState.create_named_table("mwscript");
+		luaState.script(R"(
+			function getId(id)
+				local lowerId = mwse.idCache[id]
+
+				if (not lowerId) then
+					lowerId = string.lower(id)
+					mwse.idCache[id] = lowerId
+				end
+
+				return lowerId
+			end
+		)");
+
 
 		// Bind config.
 		Configuration::bindToLua();
