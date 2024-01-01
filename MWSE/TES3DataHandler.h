@@ -41,7 +41,7 @@ namespace TES3 {
 		// Path is relative to Data Files.
 		NI::Node* loadMesh(const char* path);
 		NI::Pointer<NI::Node> loadMeshUncached(const char* path);
-		KeyframeDefinition* loadKeyframes(const char* path, const char* animation);
+		KeyframeDefinition* loadKeyframes(const char* path, const char* sequenceName);
 	};
 
 	template <typename OT>

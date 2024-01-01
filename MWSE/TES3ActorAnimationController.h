@@ -10,7 +10,7 @@
 
 namespace TES3 {
 	struct KeyframeDefinition {
-		const char* name; // 0x0
+		const char* filename; // 0x0
 		NI::Sequence* sequences[3];
 		AnimationGroup* animationGroup; // 0x10
 		unsigned short groupCount; // 0x14
