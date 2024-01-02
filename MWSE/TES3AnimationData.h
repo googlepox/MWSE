@@ -69,8 +69,11 @@ namespace TES3 {
 
 		AnimationData* ctor();
 
-		void playAnimationGroupForIndex(int animationGroup, int triIndex, int startFlag = 0, int loopCount = -1);
+		void calcAnimRootMovement(unsigned char animGroup);
+		void playAnimationGroupForIndex(int animationGroup, int bodySection, int startFlag = 0, int loopCount = -1);
+		void mergeAnimGroups(AnimationGroup* firstGroup, int layerIndex);
 		void setHeadNode(NI::Node* head);
+		bool setLayerKeyframes(KeyframeDefinition* kfData, int layerIndex, bool isBiped);
 		void updateMovementDelta(float timing, Vector3* inout_startingPosition, bool dontUpdatePositionDelta);
 
 		//
