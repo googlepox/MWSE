@@ -236,18 +236,15 @@ namespace TES3 {
 			manager->removeAll();
 		}
 		for (auto& layer : customLayers) {
-			if (layer.lower) {
-				NI_Sequence_deleting_dtor(layer.lower, 1);
-			}
-			if (layer.upper) {
-				NI_Sequence_deleting_dtor(layer.upper, 1);
-			}
-			if (layer.leftArm) {
-				NI_Sequence_deleting_dtor(layer.lower, 1);
+			auto seqGroup = &layer.lower;
+			for (int section = 0; section < BodySectionCount; ++section) {
+				if (seqGroup[section]) {
+					NI_Sequence_deleting_dtor(seqGroup[section], 1);
+				}
 			}
 		}
 
-		// Release loaded animations.
+		// Release loaded animations. Leave vanilla animations.
 		auto modelLoader = DataHandler::get()->nonDynamicData->meshData;
 		for (int i = VanillaLayerCount; i < customAnims.size(); ++i) {
 			if (customAnims[i]) {
@@ -601,7 +598,7 @@ namespace TES3 {
 	const size_t patchApplyAnimationSpeed_size = 0x2D;
 #pragma warning(pop)
 
-	void __fastcall SetAnimSpeedOnCast(TES3::AnimationData* animData) {
+	void __fastcall setAnimSpeedOnCast(TES3::AnimationData* animData) {
 		// Ensure non-zero weaponSpeed to bypass the actor controller resetting the value on zero.
 		animData->weaponSpeed = animData->getCastSpeed() + FLT_MIN;
 	}
@@ -635,8 +632,8 @@ namespace TES3 {
 		genCallEnforced(0x4E893D, 0x46B830, *reinterpret_cast<DWORD*>(&AnimationDataExtended_dtor));
 
 		// Patch: Allow changing cast animation speed. Custom speed is read and applied on initial cast.
-		mwse::writePatchCodeUnprotected(0x46CAC0, (BYTE*)&patchApplyAnimationSpeed, patchApplyAnimationSpeed_size);
-		genCallUnprotected(0x541B81, reinterpret_cast<DWORD>(&SetAnimSpeedOnCast), 0xA);
+		writePatchCodeUnprotected(0x46CAC0, reinterpret_cast<BYTE*>(&patchApplyAnimationSpeed), patchApplyAnimationSpeed_size);
+		genCallUnprotected(0x541B81, reinterpret_cast<DWORD>(&setAnimSpeedOnCast), 0xA);
 
 		// Patch every setLayerKeyframes call.
 		auto AnimationDataExtended_setLayerKeyframes = &AnimationData::setLayerKeyframes;
