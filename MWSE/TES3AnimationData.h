@@ -58,7 +58,7 @@ namespace TES3 {
 		unsigned char animGroupSoundGenCounts[150]; // 0x4EC
 		AnimationGroup::SoundGenKey** animGroupSoundGens[150]; // 0x584
 		unsigned char nextAnimGroup; // 0x7DC
-		int nextLoopCounts; // 0x7E0
+		int nextLoopCount; // 0x7E0
 
 		AnimationDataVanilla() = delete;
 		~AnimationDataVanilla() = delete;

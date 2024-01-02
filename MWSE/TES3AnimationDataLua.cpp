@@ -59,7 +59,8 @@ namespace mwse::lua {
 			usertypeDefinition["loopCounts"] = sol::readonly_property(&TES3::AnimationData::getLoopCounts);
 			usertypeDefinition["manager"] = &TES3::AnimationData::manager;
 			usertypeDefinition["movementRootNode"] = &TES3::AnimationData::movementRootNode;
-			usertypeDefinition["nextLoopCounts"] = &TES3::AnimationData::nextLoopCounts;
+			usertypeDefinition["nextAnimGroup"] = &TES3::AnimationData::nextAnimGroup;
+			usertypeDefinition["nextLoopCount"] = &TES3::AnimationData::nextLoopCount;
 			usertypeDefinition["movementSpeed"] = sol::readonly_property(&TES3::AnimationData::movementSpeed);
 			usertypeDefinition["positionDeltaMovementRoot"] = &TES3::AnimationData::positionDeltaMovementRoot;
 			usertypeDefinition["spine1Node"] = &TES3::AnimationData::spine1Node;

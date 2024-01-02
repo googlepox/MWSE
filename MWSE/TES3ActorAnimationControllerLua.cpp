@@ -57,6 +57,9 @@ namespace mwse::lua {
 			// Start our usertype.
 			auto usertypeDefinition = state.new_usertype<TES3::KeyframeDefinition>("tes3keyframeDefinition");
 			usertypeDefinition["new"] = sol::no_constructor;
+			usertypeDefinition[sol::meta_function::to_string] = [](const TES3::KeyframeDefinition* self) {
+				return std::string("KeyframeDefinition: ") + self->filename;
+			};
 
 			// Basic property binding.
 			usertypeDefinition["filename"] = sol::readonly_property(&TES3::KeyframeDefinition::filename);
