@@ -4172,49 +4172,6 @@ namespace mwse::lua {
 	}
 
 	//
-	// Patch: Allow changing cast animation speed. Custom speed is read and applied on initial cast.
-	//
-
-#pragma warning(push)
-#pragma warning(disable: 4102)
-	__declspec(naked) bool patchApplyAnimationSpeed() {
-		__asm {
-			fld [ebp + 0x64]		// ebp->AnimationData.deltaTime
-
-		isMovementAnim:
-			cmp cl, 0x2B			// AnimGroup_SwimWalkForward
-			jb isWeaponAnim
-			cmp cl, 0x7F			// AnimGroup_Jump2w
-			ja isWeaponAnim
-		movement:
-			fmul [ebp + 0x4D8]		// * ebp->AnimationData.movementSpeed
-			jmp done
-
-		isWeaponAnim:
-			cmp cl, 0x80			// AnimGroup_SpellCast (added test)
-			je weapon
-			cmp cl, 0x83			// AnimGroup_Attack1 (added creature and h2h attacks)
-			jb done
-			cmp cl, 0x8F			// AnimGroup_WeaponTwoWide
-			ja done
-		weapon:
-			fmul [ebp + 0x4DC]		// * ebp->AnimationData.weaponSpeed
-			nop
-			nop
-			nop
-		done:
-		}
-	}
-#pragma warning(pop)
-
-	const size_t patchApplyAnimationSpeed_size = 0x2D;
-
-	void __fastcall SetAnimSpeedOnCast(TES3::AnimationData* animData) {
-		// Ensure non-zero weaponSpeed to bypass the actor controller resetting the value on zero.
-		animData->weaponSpeed = animData->getCastSpeed() + FLT_MIN;
-	}
-
-	//
 	// Patch: calcMoveSpeed event for creatures.
 	//
 	
@@ -6057,17 +6014,8 @@ namespace mwse::lua {
 		genJumpEnforced(0x46DA0D, 0x46E64E, 0x46E49E);
 		genJumpUnprotected(0x46E498, 0x46E64E);
 
-		// Override AnimationData creation.
-		auto AnimationData_ctor = &TES3::AnimationData::ctor;
-		genCallEnforced(0x4E63A5, 0x46B7A0, *reinterpret_cast<DWORD*>(&AnimationData_ctor));
-		genCallEnforced(0x4E64E6, 0x46B7A0, *reinterpret_cast<DWORD*>(&AnimationData_ctor));
-		genCallEnforced(0x4E6766, 0x46B7A0, *reinterpret_cast<DWORD*>(&AnimationData_ctor));
-		genCallEnforced(0x4E69EC, 0x46B7A0, *reinterpret_cast<DWORD*>(&AnimationData_ctor));
-		genCallEnforced(0x4E6C5F, 0x46B7A0, *reinterpret_cast<DWORD*>(&AnimationData_ctor));
-
-		// Patch: Allow changing cast animation speed. Custom speed is read and applied on initial cast.
-		writePatchCodeUnprotected(0x46CAC0, (BYTE*)&patchApplyAnimationSpeed, patchApplyAnimationSpeed_size);
-		genCallUnprotected(0x541B81, reinterpret_cast<DWORD>(&SetAnimSpeedOnCast), 0xA);
+		// Extended animation system patches.
+		TES3::AnimationData::patch();
 
 		// Event: Power Recharged
 		overrideVirtualTableEnforced(0x74AC54, offsetof(PowersHashMap::VirtualTable, deleteKeyValuePair), 0x4F1C50, reinterpret_cast<DWORD>(OnDeletePowerHashMapKVP));

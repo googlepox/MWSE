@@ -167,6 +167,16 @@ namespace TES3 {
 		return keyframeDefinition;
 	}
 
+	const auto TES3_MeshData_releaseMesh = reinterpret_cast<bool (__thiscall*)(MeshData*, NI::Node*)>(0x4EE5B0);
+	bool MeshData::releaseMesh(NI::Node* rootNode) {
+		return TES3_MeshData_releaseMesh(this, rootNode);
+	}
+
+	const auto TES3_MeshData_releaseKeyframes = reinterpret_cast<bool (__thiscall*)(MeshData*, KeyframeDefinition*)>(0x4EE720);
+	bool MeshData::releaseKeyframes(KeyframeDefinition* kfData) {
+		return TES3_MeshData_releaseKeyframes(this, kfData);
+	}
+
 	//
 	// GlobalHashContainer
 	//

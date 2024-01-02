@@ -42,6 +42,8 @@ namespace TES3 {
 		NI::Node* loadMesh(const char* path);
 		NI::Pointer<NI::Node> loadMeshUncached(const char* path);
 		KeyframeDefinition* loadKeyframes(const char* path, const char* sequenceName);
+		bool releaseMesh(NI::Node* meshRoot);
+		bool releaseKeyframes(KeyframeDefinition* kfData);
 	};
 
 	template <typename OT>

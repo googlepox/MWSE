@@ -2,6 +2,7 @@
 
 #include "LuaManager.h"
 
+#include "TES3ActorAnimationController.h"
 #include "TES3AnimationData.h"
 #include "TES3AnimationGroup.h"
 #include "TES3Reference.h"
@@ -35,6 +36,7 @@ namespace mwse::lua {
 			// Basic property bindings.
 			usertypeDefinition["actorNode"] = &TES3::AnimationData::actorNode;
 			usertypeDefinition["animationGroups"] = sol::readonly_property(&TES3::AnimationData::getAnimationGroups);
+			usertypeDefinition["animations"] = sol::readonly_property(&TES3::AnimationData::getAnimations);
 			usertypeDefinition["animGroupSoundGenCounts"] = sol::readonly_property(&TES3::AnimationData::getAnimGroupSoundGenCounts);
 			//usertypeDefinition["animGroupSoundGens"] = sol::readonly_property(&TES3::AnimationData::getAnimGroupSoundGens);
 			usertypeDefinition["animGroupLayerIndices"] = sol::readonly_property(&TES3::AnimationData::getAnimGroupLayerIndices);

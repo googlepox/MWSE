@@ -22,6 +22,8 @@
 #include "NIStream.h"
 #include "NITriShape.h"
 
+#include "NIKeyframeManager.h"
+
 #include "TES3Actor.h"
 #include "TES3ActorAnimationController.h"
 #include "TES3AIData.h"
@@ -4412,18 +4414,27 @@ namespace mwse::lua {
 		}
 
 		// Change the animation temporarily. Passing nullptr resets the animation to base.
-		const char* modelFile = getOptionalParam<const char*>(params, "file", nullptr);
+		const char* animFile = getOptionalParam<const char*>(params, "file", nullptr);
+		auto meshData = TES3::DataHandler::get()->nonDynamicData->meshData;
+		TES3::KeyframeDefinition* kfData = nullptr;
 
-		if (modelFile) {
-			reference->setModelPath(modelFile, true);
-
-			animData = reference->getAttachedAnimationData();
-			if (!animData->hasOverrideAnimations()) {
+		if (animFile) {
+			kfData = meshData->loadKeyframes(animFile, animFile);
+			if (!kfData->groupCount) {
 				throw std::logic_error("Animation file failed to load.");
 			}
 		}
+
+		if (kfData) {
+			// Add animation, which may exist already.
+			animData->addCustomAnim(kfData);
+			// Make actor use this animation.
+			animData->applyCustomAnim(kfData->filename);
+			meshData->releaseKeyframes(kfData);
+		}
 		else {
-			reference->reloadAnimation(reference->baseObject->getModelPath());
+			// Reset animations to default without unloading them.
+			animData->resetCustomAnims();
 
 			// Reset animation control that may be set by playAnimation.
 			auto mact = reference->getAttachedMobileActor();

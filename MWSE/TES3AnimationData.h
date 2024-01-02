@@ -8,14 +8,14 @@
 #include "NIPointer.h"
 
 namespace TES3 {
-	struct AnimationData {
+	struct AnimationDataVanilla {
 		struct SequenceGroup {
 			NI::Sequence* lower;
 			NI::Sequence* upper;
 			NI::Sequence* leftArm;
 
-			SequenceGroup() = delete;
-			~SequenceGroup() = delete;
+			SequenceGroup() : lower(nullptr), upper(nullptr), leftArm(nullptr) {}
+			~SequenceGroup() {}
 		};
 		static_assert(sizeof(SequenceGroup) == 0xC, "TES3::AnimationAttachment::SequenceGroup failed size validation");
 
@@ -60,14 +60,14 @@ namespace TES3 {
 		unsigned char nextAnimGroup; // 0x7DC
 		int nextLoopCounts; // 0x7E0
 
-		AnimationData() = delete;
-		~AnimationData() = delete;
+		AnimationDataVanilla() = delete;
+		~AnimationDataVanilla() = delete;
 
 		//
 		// Other related this-call functions.
 		//
 
-		AnimationData* ctor();
+		AnimationDataVanilla* ctor();
 
 		void calcAnimRootMovement(unsigned char animGroup);
 		void playAnimationGroupForIndex(int animationGroup, int bodySection, int startFlag = 0, int loopCount = -1);
@@ -104,5 +104,36 @@ namespace TES3 {
 		std::reference_wrapper<decltype(animGroupSoundGens)> getAnimGroupSoundGens();
 
 	};
-	static_assert(sizeof(AnimationData) == 0x7E4, "TES3::AnimationData failed size validation");
+	static_assert(sizeof(AnimationDataVanilla) == 0x7E4, "TES3::AnimationDataVanilla failed size validation");
+
+	struct AnimationData : AnimationDataVanilla {
+		std::vector<SequenceGroup> customLayers;
+		std::vector<KeyframeDefinition*> customAnims;
+
+		AnimationData() = delete;
+		~AnimationData() = delete;
+
+		//
+		// Other related this-call functions.
+		//
+
+		AnimationData* ctor();
+		void dtor();
+
+		bool setLayerKeyframes(KeyframeDefinition* kfData, int layerIndex, bool isBiped);
+
+		//
+		// Custom functions.
+		//
+
+		bool addCustomAnim(KeyframeDefinition* kfData);
+		bool applyCustomAnim(const char* name);
+		bool removeCustomAnim(const char* name);
+		void resetCustomAnims();
+
+		std::reference_wrapper<decltype(customLayers)> getKeyframeLayers();
+		std::reference_wrapper<decltype(customAnims)> getAnimations();
+
+		static void patch();
+	};
 }
