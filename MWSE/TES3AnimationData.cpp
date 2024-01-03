@@ -20,6 +20,10 @@ namespace TES3 {
 	// TES3::AnimationDataVanilla
 	//
 
+	NI::Sequence* AnimationDataVanilla::SequenceGroup::get(int section) {
+		return (&lower)[section];
+	}
+
 	const auto TES3_AnimationData_ctor = reinterpret_cast<void(__thiscall*)(AnimationDataVanilla*)>(0x46B7A0);
 	AnimationDataVanilla* AnimationDataVanilla::ctor() {
 		// Call original function.
@@ -236,10 +240,10 @@ namespace TES3 {
 			manager->removeAll();
 		}
 		for (auto& layer : customLayers) {
-			auto seqGroup = &layer.lower;
 			for (int section = 0; section < BodySectionCount; ++section) {
-				if (seqGroup[section]) {
-					NI_Sequence_deleting_dtor(seqGroup[section], 1);
+				auto seq = layer.get(section);
+				if (seq) {
+					NI_Sequence_deleting_dtor(seq, 1);
 				}
 			}
 		}
@@ -274,6 +278,23 @@ namespace TES3 {
 		customAnims[layerIndex] = kfData;
 
 		return TES3_AnimationData_setLayerKeyframes(this, kfData, layerIndex, isBiped);
+	}
+
+	void AnimationData::onSectionInheritAnim(int bodySection) {
+		currentActionIndices[bodySection] = currentActionIndices[0];
+		currentAnimGroup[bodySection] = currentAnimGroup[0];
+		loopCounts[bodySection] = loopCounts[0];
+		timing[bodySection] = timing[0];
+
+		// Do necessary updates if the layer has changed.
+		int prevLayer = currentAnimGroupLayer[bodySection], newLayer = currentAnimGroupLayer[0];
+		if (newLayer != prevLayer) {
+			if (prevLayer != -1) {
+				manager->deactivateSequence(customLayers[prevLayer].get(bodySection));
+			}
+			manager->activateSequence(customLayers[newLayer].get(bodySection));
+			currentAnimGroupLayer[bodySection] = newLayer;
+		}
 	}
 
 	bool AnimationData::addCustomAnim(KeyframeDefinition* kfData) {
@@ -561,6 +582,14 @@ namespace TES3 {
 	}
 	const size_t patchSplitBodySectionSequences_size = 0xC;
 
+	__declspec(naked) void patchOnSectionInheritAnim() {
+		__asm {
+			push esi				// push bodySection
+			mov ecx, ebp			// set up thiscall
+		}
+	}
+	const size_t patchOnSectionInheritAnim_size = 0x3;
+
 	//
 	// Patch: Allow changing cast animation speed. Custom speed is read and applied on initial cast.
 	//
@@ -689,6 +718,13 @@ namespace TES3 {
 		// Patch sequence cloning to avoid out of bounds read + SequenceManager requires unique sequence names.
 		writePatchCodeUnprotected(0x46BBC6, reinterpret_cast<BYTE*>(patchSplitBodySectionSequences), patchSplitBodySectionSequences_size);
 		genCallUnprotected(0x46BBD9, reinterpret_cast<DWORD>(splitBodySectionSequences_newSequence));
+
+		// Patch layer management after an animation ends, where upper and left arm sections inherit the lower section animation.
+		auto AnimationDataExtended_onSectionInheritAnim = &AnimationData::onSectionInheritAnim;
+		writePatchCodeUnprotected(0x46DA12, reinterpret_cast<BYTE*>(&patchOnSectionInheritAnim), patchOnSectionInheritAnim_size);
+		genCallUnprotected(0x46DA15, *reinterpret_cast<DWORD*>(&AnimationDataExtended_onSectionInheritAnim), 0x12);
+		writePatchCodeUnprotected(0x46E639, reinterpret_cast<BYTE*>(&patchOnSectionInheritAnim), patchOnSectionInheritAnim_size);
+		genCallUnprotected(0x46E63C, *reinterpret_cast<DWORD*>(&AnimationDataExtended_onSectionInheritAnim), 0x12);
 	}
 
 }

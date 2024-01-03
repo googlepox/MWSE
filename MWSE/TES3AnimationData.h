@@ -16,6 +16,8 @@ namespace TES3 {
 
 			SequenceGroup() : lower(nullptr), upper(nullptr), leftArm(nullptr) {}
 			~SequenceGroup() {}
+
+			NI::Sequence* get(int section);
 		};
 		static_assert(sizeof(SequenceGroup) == 0xC, "TES3::AnimationAttachment::SequenceGroup failed size validation");
 
@@ -125,6 +127,8 @@ namespace TES3 {
 		//
 		// Custom functions.
 		//
+
+		void onSectionInheritAnim(int bodySection);
 
 		bool addCustomAnim(KeyframeDefinition* kfData);
 		bool applyCustomAnim(const char* name);
