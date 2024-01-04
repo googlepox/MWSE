@@ -4388,7 +4388,7 @@ namespace mwse::lua {
 		}
 	}
 
-	sol::optional<std::tuple<unsigned char, unsigned char, unsigned char>> getCurrentAnimationGroups(sol::table params) {
+	sol::optional<std::tuple<TES3::AnimGroupID, TES3::AnimGroupID, TES3::AnimGroupID>> getCurrentAnimationGroups(sol::table params) {
 		TES3::Reference* reference = getOptionalParamExecutionReference(params);
 		if (reference == nullptr) {
 			throw std::invalid_argument("Invalid 'reference' parameter provided.");
@@ -4485,7 +4485,7 @@ namespace mwse::lua {
 
 		// Play anim group 0 (returns control to AI) if no groups are specified.
 		if (lowerGroup == -1 && upperGroup == -1 && shieldGroup == -1) {
-			group = lowerGroup = upperGroup = shieldGroup = 0;
+			group = lowerGroup = upperGroup = shieldGroup = int(TES3::AnimGroupID::Idle);
 		}
 
 		// Default to immediate start and infinite looping.
@@ -4494,13 +4494,13 @@ namespace mwse::lua {
 
 		// Start animations.
 		if (lowerGroup != -1) {
-			animData->playAnimationGroupForIndex(lowerGroup, 0, startFlag, loopCount);
+			animData->playAnimationGroupForSection(TES3::AnimGroupID(lowerGroup), 0, startFlag, loopCount);
 		}
 		if (upperGroup != -1) {
-			animData->playAnimationGroupForIndex(upperGroup, 1, startFlag, loopCount);
+			animData->playAnimationGroupForSection(TES3::AnimGroupID(upperGroup), 1, startFlag, loopCount);
 		}
 		if (shieldGroup != -1) {
-			animData->playAnimationGroupForIndex(shieldGroup, 2, startFlag, loopCount);
+			animData->playAnimationGroupForSection(TES3::AnimGroupID(shieldGroup), 2, startFlag, loopCount);
 		}
 
 		auto mact = reference->getAttachedMobileActor();
@@ -4508,17 +4508,17 @@ namespace mwse::lua {
 			// If no overall group is specified, do not idle AI and only override specified body part groups.
 			if (group == -1) {
 				if (mact->animationController.asActor) {
-					unsigned char targetBones = 0xFF;
+					unsigned char targetSection = 0xFF;
 					if (lowerGroup != -1) {
-						targetBones = 0;
+						targetSection = 0;
 					}
 					else if (upperGroup != -1) {
-						targetBones = 1;
+						targetSection = 1;
 					}
 					else if (shieldGroup != -1) {
-						targetBones = 2;
+						targetSection = 2;
 					}
-					mact->animationController.asActor->patchedOverrideState = targetBones;
+					mact->animationController.asActor->patchedOverrideState = targetSection;
 				}
 			}
 			else {
@@ -4543,13 +4543,13 @@ namespace mwse::lua {
 			return;
 		}
 
-		if (animData->currentAnimGroup[0] != 0) {
+		if (animData->currentAnimGroup[0] != TES3::AnimGroupID::Idle) {
 			animData->loopCounts[0] = 0;
 		}
-		if (animData->currentAnimGroup[1] != 0) {
+		if (animData->currentAnimGroup[1] != TES3::AnimGroupID::Idle) {
 			animData->loopCounts[1] = 0;
 		}
-		if (animData->currentAnimGroup[2] != 0) {
+		if (animData->currentAnimGroup[2] != TES3::AnimGroupID::Idle) {
 			animData->loopCounts[2] = 0;
 		}
 	}

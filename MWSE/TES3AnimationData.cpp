@@ -35,16 +35,16 @@ namespace TES3 {
 		return this;
 	}
 
-	const auto TES3_AnimationData_calcAnimRootMovement = reinterpret_cast<void(__thiscall*)(AnimationDataVanilla*, unsigned char)>(0x46FD80);
-	void AnimationDataVanilla::calcAnimRootMovement(unsigned char animGroup) {
-		TES3_AnimationData_calcAnimRootMovement(this, animGroup);
+	const auto TES3_AnimationData_calcRootMovement = reinterpret_cast<void(__thiscall*)(AnimationDataVanilla*, AnimGroupID)>(0x46FD80);
+	void AnimationDataVanilla::calcRootMovement(AnimGroupID animGroup) {
+		TES3_AnimationData_calcRootMovement(this, animGroup);
 	}
 
-	const auto TES3_AnimationData_playAnimationGroupForIndex = reinterpret_cast<void(__thiscall*)(AnimationDataVanilla*, int, int, int, int)>(0x470AE0);
-	void AnimationDataVanilla::playAnimationGroupForIndex(int animationGroup, int bodySection, int startFlag, int loopCount) {
+	const auto TES3_AnimationData_playAnimationGroupForSection = reinterpret_cast<void(__thiscall*)(AnimationDataVanilla*, AnimGroupID, int, int, int)>(0x470AE0);
+	void AnimationDataVanilla::playAnimationGroupForSection(AnimGroupID animationGroup, int bodySection, int startFlag, int loopCount) {
 		if (mwse::lua::event::PlayAnimationGroupEvent::getEventEnabled()) {
 			auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
-			sol::object response = stateHandle.triggerEvent(new mwse::lua::event::PlayAnimationGroupEvent(reinterpret_cast<AnimationData*>(this), animationGroup, bodySection, startFlag, loopCount));
+			sol::object response = stateHandle.triggerEvent(new mwse::lua::event::PlayAnimationGroupEvent(reinterpret_cast<AnimationData*>(this), int(animationGroup), bodySection, startFlag, loopCount));
 			if (response.get_type() == sol::type::table) {
 				sol::table eventData = response;
 
@@ -60,7 +60,7 @@ namespace TES3 {
 			}
 		}
 
-		TES3_AnimationData_playAnimationGroupForIndex(this, animationGroup, bodySection, startFlag, loopCount);
+		TES3_AnimationData_playAnimationGroupForSection(this, animationGroup, bodySection, startFlag, loopCount);
 	}
 
 	const auto TES3_AnimationData_mergeAnimGroups = reinterpret_cast<void(__thiscall*)(AnimationDataVanilla*, AnimationGroup*, int)>(0x4708D0);
@@ -90,10 +90,10 @@ namespace TES3 {
 		return nullptr;
 	}
 
-	void AnimationDataVanilla::playAnimationGroup(int animationGroup, int startFlag, int loopCount) {
-		playAnimationGroupForIndex(animationGroup, 0, startFlag, loopCount);
-		playAnimationGroupForIndex(animationGroup, 1, startFlag, loopCount);
-		playAnimationGroupForIndex(animationGroup, 2, startFlag, loopCount);
+	void AnimationDataVanilla::playAnimationGroup(AnimGroupID animationGroup, int startFlag, int loopCount) {
+		playAnimationGroupForSection(animationGroup, 0, startFlag, loopCount);
+		playAnimationGroupForSection(animationGroup, 1, startFlag, loopCount);
+		playAnimationGroupForSection(animationGroup, 2, startFlag, loopCount);
 	}
 
 	bool AnimationDataVanilla::setOverrideLayerKeyframes(KeyframeDefinition* kfData) {
@@ -109,20 +109,21 @@ namespace TES3 {
 		return keyframeLayers[0].lower != nullptr;
 	}
 
-	void AnimationDataVanilla::swapAnimationGroups(int animationGroup1, int animationGroup2) {
+	void AnimationDataVanilla::swapAnimationGroups(AnimGroupID animationGroup1, AnimGroupID animationGroup2) {
 		// Swap all animation group specific data.
-		std::swap(animationGroups[animationGroup1], animationGroups[animationGroup2]);
-		std::swap(animGroupLayerIndices[animationGroup1], animGroupLayerIndices[animationGroup2]);
-		std::swap(animGroupSoundGens[animationGroup1], animGroupSoundGens[animationGroup2]);
-		std::swap(animGroupSoundGenCounts[animationGroup1], animGroupSoundGenCounts[animationGroup2]);
-		std::swap(approxRootTravelDistances[animationGroup1], approxRootTravelDistances[animationGroup2]);
+		int g1 = int(animationGroup1), g2 = int(animationGroup2);
+		std::swap(animationGroups[g1], animationGroups[g2]);
+		std::swap(animGroupLayerIndices[g1], animGroupLayerIndices[g2]);
+		std::swap(animGroupSoundGens[g1], animGroupSoundGens[g2]);
+		std::swap(animGroupSoundGenCounts[g1], animGroupSoundGenCounts[g2]);
+		std::swap(approxRootTravelDistances[g1], approxRootTravelDistances[g2]);
 
 		// Fix up timing and sequence activation if the swap affects the currently playing animation.
 		for (int i = 0; i < 3; ++i) {
-			auto group = currentAnimGroup[i];
+			auto group = int(currentAnimGroup[i]);
 			auto sequenceGroup = &this->keyframeLayers[i].lower;
 
-			if (group == animationGroup1 || group == animationGroup2) {
+			if (group == g1 || group == g2) {
 				// Reset timing to the start of the current action.
 				timing[i] = animationGroups[group]->actionTimings[currentActionIndices[i]];
 
@@ -151,8 +152,7 @@ namespace TES3 {
 		patchedCastSpeed = (unsigned short)(speed * fixedPointSpeedScale);
 
 		// Update current animation speed if currently casting.
-		constexpr unsigned char spellCastAnimID = 0x80;
-		if (currentAnimGroup[1] == spellCastAnimID) {
+		if (currentAnimGroup[1] == AnimGroupID::SpellCast) {
 			// Ensure non-zero weaponSpeed to bypass the actor controller resetting the value on zero.
 			weaponSpeed = speed + FLT_MIN;
 		}
@@ -335,7 +335,7 @@ namespace TES3 {
 
 		// Reset timing for any currently running anims using new data.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto group = currentAnimGroup[i];
+			auto group = int(currentAnimGroup[i]);
 			if (animGroupLayerIndices[group] == layer && currentAnimGroupLayer[i] != layer) {
 				currentAnimGroupLayer[i] = layer;
 				timing[i] = animationGroups[group]->actionTimings[currentActionIndices[i]];
@@ -382,7 +382,7 @@ namespace TES3 {
 
 		// Reset timing for any currently running anims using new data.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto group = currentAnimGroup[i];
+			auto group = int(currentAnimGroup[i]);
 			if (currentAnimGroupLayer[i] != animGroupLayerIndices[group]) {
 				currentAnimGroupLayer[i] = animGroupLayerIndices[group];
 				timing[i] = animationGroups[group]->actionTimings[currentActionIndices[i]];

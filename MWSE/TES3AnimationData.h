@@ -33,7 +33,7 @@ namespace TES3 {
 		float headLookAngleX; // 0x2C
 		float headLookAngleZ; // 0x30
 		float headLookClosestDistance; // 0x34
-		unsigned char currentAnimGroup[3]; // 0x38
+		AnimGroupID currentAnimGroup[3]; // 0x38
 		int currentActionIndices[3]; // 0x3C
 		int loopCounts[3]; // 0x48
 		unsigned int flags; // 0x54
@@ -59,7 +59,7 @@ namespace TES3 {
 		int currentSoundGenIndices[3]; // 0x4E0
 		unsigned char animGroupSoundGenCounts[150]; // 0x4EC
 		AnimationGroup::SoundGenKey** animGroupSoundGens[150]; // 0x584
-		unsigned char nextAnimGroup; // 0x7DC
+		AnimGroupID nextAnimGroup; // 0x7DC
 		int nextLoopCount; // 0x7E0
 
 		AnimationDataVanilla() = delete;
@@ -71,8 +71,8 @@ namespace TES3 {
 
 		AnimationDataVanilla* ctor();
 
-		void calcAnimRootMovement(unsigned char animGroup);
-		void playAnimationGroupForIndex(int animationGroup, int bodySection, int startFlag = 0, int loopCount = -1);
+		void calcRootMovement(AnimGroupID animGroup);
+		void playAnimationGroupForSection(AnimGroupID animationGroup, int bodySection, int startFlag = 0, int loopCount = -1);
 		void mergeAnimGroups(AnimationGroup* firstGroup, int layerIndex);
 		void setHeadNode(NI::Node* head);
 		bool setLayerKeyframes(KeyframeDefinition* kfData, int layerIndex, bool isBiped);
@@ -84,10 +84,10 @@ namespace TES3 {
 
 		Reference* getReference() const;
 
-		void playAnimationGroup(int animationGroup, int startFlag = 0, int loopCount = -1);
+		void playAnimationGroup(AnimGroupID animationGroup, int startFlag = 0, int loopCount = -1);
 		bool setOverrideLayerKeyframes(KeyframeDefinition* animData);
 		bool hasOverrideAnimations() const;
-		void swapAnimationGroups(int animationGroup1, int animationGroup2);
+		void swapAnimationGroups(AnimGroupID animationGroup1, AnimGroupID animationGroup2);
 
 		float getCastSpeed() const;
 		void setCastSpeed(float speed);

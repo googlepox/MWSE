@@ -165,19 +165,19 @@ namespace TES3 {
 			if (overrideAnimGroup != baseAnimGroup) {
 				// Still animating. Suppress updates to the AnimationAttachment by misusing ActorAnimData internal flags.
 				if (state <= 1) {
-					layerUpperBody.playbackTypeEnum = 8;
+					sectionUpperBody.playbackTypeEnum = 8;
 				}
 				if (state <= 2) {
-					layerShieldArm.playbackTypeEnum = 8;
+					sectionLeftArm.playbackTypeEnum = 8;
 				}
 			}
 			else {
 				// Animation has completed, and been paused at the end. Signal controller to update animations.
 				if (state <= 1) {
-					animationData->currentAnimGroup[1] = 0xFF;
+					animationData->currentAnimGroup[1] = AnimGroupID::NONE;
 				}
 				if (state <= 2) {
-					animationData->currentAnimGroup[2] = 0xFF;
+					animationData->currentAnimGroup[2] = AnimGroupID::NONE;
 				}
 				// End override state.
 				patchedOverrideState = 0xFF;

@@ -213,7 +213,7 @@ namespace TES3 {
 			// Custom resurrect logic that revives with minimal state changes.
 			actionData.animStateAttack = AttackAnimationState::Idle;
 			actionData.aiBehaviorState = 0;
-			actionData.currentAnimGroup = 0xFF;
+			actionData.animGroupCurrentAction = AnimGroupID::NONE;
 			actorFlags &= ~(MobileActorFlag::SpellReadied | MobileActorFlag::WeaponDrawn);
 			movementFlags = 0;
 
@@ -744,9 +744,8 @@ namespace TES3 {
 			auto animData = animationController.asActor->animationData;
 			if (animData) {
 				// Check for hit stun animations.
-				const unsigned char hit1 = 19, swimHit3 = 26;
 				auto bodyAnimGroup = animData->currentAnimGroup[0];
-				return bodyAnimGroup >= hit1 && bodyAnimGroup <= swimHit3;
+				return bodyAnimGroup >= AnimGroupID::Hit1 && bodyAnimGroup <= AnimGroupID::SwimHit3;
 			}
 		}
 		return false;
@@ -1333,16 +1332,14 @@ namespace TES3 {
 		}
 
 		auto animState = actionData.animStateAttack;
-		auto animGroup = actionData.currentAnimGroup;
-		const unsigned char Hit1 = 0x13, SwimHit3 = 0x1A;
+		auto animGroup = actionData.animGroupCurrentAction;
 
 		if (animState == AttackAnimationState::Idle
-			|| (animState == AttackAnimationState::ReadyingWeap && animGroup >= Hit1 && animGroup <= SwimHit3)) {
-			auto data_animGroupNoteClass = reinterpret_cast<int*>(0x78B0A8);
+			|| (animState == AttackAnimationState::ReadyingWeap && animGroup >= AnimGroupID::Hit1 && animGroup <= AnimGroupID::SwimHit3)) {
 			auto weaponAnimGroup = this->vTable.mobileActor->getReadiedWeaponAnimationGroup(this);
 
-			switch (data_animGroupNoteClass[weaponAnimGroup]) {
-			case 2: // Creature attack
+			switch (AnimationGroup::getActionClass(AnimGroupID(weaponAnimGroup))) {
+			case AnimGroupActionClass::CreatureAttack:
 			{
 				int roll100 = mwse::tes3::rand() % 100;
 				if (roll100 < 33) {
@@ -1356,12 +1353,12 @@ namespace TES3 {
 				}
 				break;
 			}
-			case 3: // Projectile weapon
+			case AnimGroupActionClass::ProjectileWeapon:
 				if (!getMobileActorMovementFlag(ActorMovement::Swimming)) {
 					actionData.physicalAttackType = PhysicalAttackType::Projectile;
 				}
 				break;
-			case 7: // Melee weapon
+			case AnimGroupActionClass::MeleeWeapon:
 				const auto getWeightedRandomAttackDirection = reinterpret_cast<PhysicalAttackType(__thiscall*)(CombatSession*)>(0x5373B0);
 				if (attackType) {
 					actionData.physicalAttackType = (PhysicalAttackType)attackType.value();
@@ -1406,8 +1403,8 @@ namespace TES3 {
 
 		if (cancel) {
 			// Attempt to cancel hit stun or knockdown.
-			if (actionData.animGroupStunEffect != 255) {
-				actionData.animGroupStunEffect = 255;
+			if (actionData.animGroupNextStun != AnimGroupID::NONE) {
+				actionData.animGroupNextStun = AnimGroupID::NONE;
 			}
 			else if (actionData.animStateAttack == AttackAnimationState::Knockdown) {
 				actionData.animStateAttack = AttackAnimationState::Ready;
@@ -1422,8 +1419,7 @@ namespace TES3 {
 
 		// Conditionals matching the hit stun mechanics.
 		auto animGroup = animData->currentAnimGroup[0];
-		const unsigned char Hit1 = 0x13, SwimHit3 = 0x1A;
-		if (!isNotKnockedDownOrOut() || (animGroup >= Hit1 && animGroup <= SwimHit3)) {
+		if (!isNotKnockedDownOrOut() || (animGroup >= AnimGroupID::Hit1 && animGroup <= AnimGroupID::SwimHit3)) {
 			return false;
 		}
 			
@@ -1435,7 +1431,6 @@ namespace TES3 {
 		}
 		else {
 			// Hit stun. When attacking or casting is interruped and the recovery animation is short.
-			// Note that this specific animation ID is detected and later converted to a randomized animation (Swim)Hit1-3.
 
 			// Conditionals matching the hit stun mechanics. Creatures are less interruptible.
 			auto animStateAttack = actionData.animStateAttack;
@@ -1450,8 +1445,8 @@ namespace TES3 {
 				&& animStateAttack != TES3::AttackAnimationState::CastingFollow
 				&& animStateAttack != TES3::AttackAnimationState::PickingProbing))
 			{
-				const unsigned char knockDownAnim = 0x22;
-				actionData.animGroupStunEffect = knockDownAnim;
+				// Note that this specific value is a special case and will be later converted to a randomized animation (Swim)Hit1-3.
+				actionData.animGroupNextStun = AnimGroupID::KnockDown;
 				return true;
 			}
 		}

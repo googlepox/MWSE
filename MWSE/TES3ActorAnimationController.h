@@ -34,21 +34,21 @@ namespace TES3 {
 	static_assert(sizeof(ActorAnimationController_VirtualTable) == 0x20, "TES3::ActorAnimationController_VirtualTable failed size validation");
 
 	struct ActorAnimationController {
-		struct Layer {
-			unsigned char animGroupID;
+		struct BodySection {
+			AnimGroupID animGroupID;
 			int playbackTypeEnum;
-			float timing_8;
+			float attackFollowTiming;
 			int loopCount;
 
-			Layer() = delete;
-			~Layer() = delete;
+			BodySection() = delete;
+			~BodySection() = delete;
 		};
-		static_assert(sizeof(ActorAnimationController::Layer) == 0x10, "TES3::ActorAnimationController::Layer failed size validation");
+		static_assert(sizeof(ActorAnimationController::BodySection) == 0x10, "TES3::ActorAnimationController::BodySection failed size validation");
 
 		ActorAnimationController_VirtualTable* vTable; // 0x0
 		unsigned char useAnimationDelta; // 0x04
 		char padding_0x5[3];
-		char animGroup_unknown; // 0x08
+		AnimGroupID animGroupAttack; // 0x08
 		char padding_0x9[3];
 		int playbackTypeEnum; // 0x0C
 		float attackFollowTiming; // 0x10
@@ -69,15 +69,15 @@ namespace TES3 {
 		Matrix33 groundPlaneRotation; // 0x4C
 		Matrix33 verticalRotation; // 0x70
 		int unknown_0x94;
-		unsigned char animGroupMovement; // 0x98
-		unsigned char animGroupIdle; // 0x99
-		unsigned char animGroupIdle2; // 0x9A
+		AnimGroupID animGroupMovement; // 0x98
+		AnimGroupID animGroupIdle; // 0x99
+		AnimGroupID animGroupIdle2; // 0x9A
 		unsigned char patchedOverrideState; // 0x9B
 		int shouldJump; // 0x9C
-		int unknown_0xA0;
-		Layer layerLowerBody; // 0xA4
-		Layer layerUpperBody; // 0xB4
-		Layer layerShieldArm; // 0xC4
+		float dotProductFacingAgainstWind; // 0xA0
+		BodySection sectionLowerBody; // 0xA4
+		BodySection sectionUpperBody; // 0xB4
+		BodySection sectionLeftArm; // 0xC4
 
 		ActorAnimationController() = delete;
 		~ActorAnimationController() = delete;

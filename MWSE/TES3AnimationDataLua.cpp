@@ -75,7 +75,7 @@ namespace mwse::lua {
 			// Basic function bindings.
 			usertypeDefinition["getReference"] = &TES3::AnimationData::getReference;
 			usertypeDefinition["playAnimationGroup"] = &TES3::AnimationData::playAnimationGroup;
-			usertypeDefinition["playAnimationGroupForIndex"] = &TES3::AnimationData::playAnimationGroupForIndex;
+			usertypeDefinition["playAnimationGroupForSection"] = &TES3::AnimationData::playAnimationGroupForSection;
 			usertypeDefinition["setHeadNode"] = &TES3::AnimationData::setHeadNode;
 			usertypeDefinition["setOverrideLayerKeyframes"] = &TES3::AnimationData::setOverrideLayerKeyframes;
 			usertypeDefinition["swapAnimationGroups"] = &TES3::AnimationData::swapAnimationGroups;

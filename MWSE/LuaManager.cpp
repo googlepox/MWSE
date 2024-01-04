@@ -5987,23 +5987,23 @@ namespace mwse::lua {
 		genNOPUnprotected(0x49A4E9, 0xD);
 
 		// Event: playGroup
-		auto AnimationData_playAnimationGroupForIndex = &TES3::AnimationData::playAnimationGroupForIndex;
-		genCallEnforced(0x4C699D, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x4C69AB, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x4C69B9, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x4DC9AF, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x4DC9BD, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x4DC9CB, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x524BC8, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x524BD6, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x524BE4, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x540AF3, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x540B09, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x540B1E, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x540EF9, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x745B89, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x745B9E, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
-		genCallEnforced(0x745BB3, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForIndex));
+		auto AnimationData_playAnimationGroupForSection = &TES3::AnimationData::playAnimationGroupForSection;
+		genCallEnforced(0x4C699D, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x4C69AB, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x4C69B9, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x4DC9AF, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x4DC9BD, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x4DC9CB, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x524BC8, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x524BD6, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x524BE4, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x540AF3, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x540B09, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x540B1E, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x540EF9, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x745B89, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x745B9E, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
+		genCallEnforced(0x745BB3, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
 
 		// Modify actor animation controller to allow blocking animation changes.
 		writePatchCodeUnprotected(0x53DAB5, (BYTE*)&patchActorAnimInit, patchActorAnimInit_size);

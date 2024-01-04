@@ -23,6 +23,7 @@ namespace mwse::lua {
 
 			// Basic property binding.
 			usertypeDefinition["alphaProperty"] = &TES3::ActorAnimationController::alphaProperty;
+			usertypeDefinition["animGroupAttack"] = &TES3::ActorAnimationController::animGroupAttack;
 			usertypeDefinition["animGroupIdle"] = &TES3::ActorAnimationController::animGroupIdle;
 			usertypeDefinition["animGroupIdle2"] = &TES3::ActorAnimationController::animGroupIdle2;
 			usertypeDefinition["animGroupMovement"] = &TES3::ActorAnimationController::animGroupMovement;
