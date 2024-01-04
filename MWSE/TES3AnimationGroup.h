@@ -193,11 +193,22 @@ namespace TES3 {
 		AnimationGroup() = delete;
 		~AnimationGroup() = delete;
 
+		//
+		// Other related this-call functions.
+		//
+
+		void calcNoteTimes();
+
+		//
+		// Custom functions.
+		//
+
+		AnimationGroup* findGroup(AnimGroupID groupId);
+		static AnimGroupActionClass getActionClass(AnimGroupID groupId);
+
 		nonstd::span<int> getActionFrames();
 		nonstd::span<float> getActionTimings();
 		nonstd::span<SoundGenKey> getSoundGenKeys();
-
-		static AnimGroupActionClass getActionClass(AnimGroupID groupId);
 	};
 	static_assert(sizeof(AnimationGroup) == 0x2C, "TES3::AnimationGroup failed size validation");
 	static_assert(sizeof(AnimationGroup::SoundGenKey) == 0x14, "TES3::AnimationGroup::SoundGenKey failed size validation");

@@ -280,6 +280,44 @@ namespace TES3 {
 		return TES3_AnimationData_setLayerKeyframes(this, kfData, layerIndex, isBiped);
 	}
 
+	void AnimationData::mergeAnimGroup(AnimationGroup* animGroup, int layerIndex) {
+		// Merge code for an individual group, based on the original implementation.
+		auto groupId = animGroup->groupId;
+		int i = int(groupId);
+
+		// Start up idle animation if this is the base idle and there is no animation playing.
+		if (currentAnimGroup[0] == AnimGroupID::NONE && nextAnimGroup == AnimGroupID::NONE && groupId == AnimGroupID::Idle) {
+			nextAnimGroup = AnimGroupID::Idle;
+		}
+
+		// Ensure derived data is calculated in correct order before use.
+		animGroup->calcNoteTimes();
+		animationGroups[i] = animGroup;
+		animGroupLayerIndices[i] = layerIndex;
+		calcRootMovement(groupId);
+
+		// Clear existing soundgens.
+		if (animGroupSoundGens[i]) {
+			mwse::tes3::_delete(animGroupSoundGens[i]);
+		}
+		animGroupSoundGens[i] = nullptr;
+
+		// Copy new soundgen array from group.
+		auto soundGenCount = animGroup->soundGenCount;
+		animGroupSoundGenCounts[i] = soundGenCount;
+		if (soundGenCount > 0) {
+			auto soundGenArray = mwse::tes3::_new<AnimationGroup::SoundGenKey*>(soundGenCount);
+			memcpy(soundGenArray, animGroup->soundGenKeys, sizeof(soundGenArray[0]) * soundGenCount);
+			animGroupSoundGens[i] = soundGenArray;
+		}
+	}
+
+	void AnimationData::mergeAnimGroups(AnimationGroup* firstGroup, int layerIndex) {
+		for (auto iter = firstGroup; iter; iter = iter->nextGroup) {
+			mergeAnimGroup(iter, layerIndex);
+		}
+	}
+		
 	void AnimationData::onSectionInheritAnim(int bodySection) {
 		currentActionIndices[bodySection] = currentActionIndices[0];
 		currentAnimGroup[bodySection] = currentAnimGroup[0];
@@ -351,7 +389,7 @@ namespace TES3 {
 			}
 		}
 
-		// Fix up movement root after modification by TES3_AnimationData_mergeAnimGroups.
+		// Fix up movement root after modification by mergeAnimGroups.
 		TES3::Vector3 unused;
 		updateMovementDelta(timing[0], &unused, true);
 
@@ -359,8 +397,63 @@ namespace TES3 {
 	}
 
 	bool AnimationData::removeCustomAnim(const char* name) {
-		// TODO: Implement.
-		return false;
+		auto iter = std::find_if(customAnims.begin(), customAnims.end(),
+			[name](TES3::KeyframeDefinition* anim) { return anim && std::strcmp(anim->filename, name) == 0; }
+		);
+		if (iter == customAnims.end()) {
+			return false;
+		}
+		int layer = iter - customAnims.begin();
+		auto kfData = *iter;
+
+		// Disable sequences from current active layers.
+		for (int i = 0; i < BodySectionCount; ++i) {
+			auto l = currentAnimGroupLayer[i];
+			if (l != -1) {
+				auto seqGrp = &customLayers[l].lower;
+				manager->deactivateSequence(seqGrp[i]);
+			}
+		}
+
+		// Merge in vanilla groups to replace animgroups from this anim.
+		for (int groupId = 0; groupId <= int(AnimGroupID::Last); ++groupId) {
+			if (animGroupLayerIndices[groupId] == layer) {
+				for (int v = 0; v < VanillaLayerCount; ++v) {
+					auto vanillaAnim = customAnims[v];
+					if (vanillaAnim) {
+						auto vanillaGroup = vanillaAnim->animationGroup->findGroup(AnimGroupID(groupId));
+						if (vanillaGroup) {
+							mergeAnimGroup(vanillaGroup, v);
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		// Reset timing for any currently running anims using new data.
+		for (int i = 0; i < BodySectionCount; ++i) {
+			auto group = int(currentAnimGroup[i]);
+			if (currentAnimGroupLayer[i] == layer) {
+				currentAnimGroupLayer[i] = animGroupLayerIndices[group];
+				timing[i] = animationGroups[group]->actionTimings[currentActionIndices[i]];
+			}
+		}
+
+		// Enable sequences for new active layers.
+		for (int i = 0; i < BodySectionCount; ++i) {
+			auto l = currentAnimGroupLayer[i];
+			if (l != -1) {
+				auto seqGrp = &customLayers[l].lower;
+				manager->activateSequence(seqGrp[i]);
+			}
+		}
+
+		// Fix up movement root after modification by mergeAnimGroup.
+		TES3::Vector3 unused;
+		updateMovementDelta(timing[0], &unused, true);
+
+		return true;
 	}
 
 	void AnimationData::resetCustomAnims() {
@@ -398,7 +491,7 @@ namespace TES3 {
 			}
 		}
 
-		// Fix up movement root after modification by TES3_AnimationData_mergeAnimGroups.
+		// Fix up movement root after modification by mergeAnimGroups.
 		TES3::Vector3 unused;
 		updateMovementDelta(timing[0], &unused, true);
 	}
@@ -489,7 +582,7 @@ namespace TES3 {
 		}
 	}
 
-	__declspec(naked) NI::Sequence* checkAnimGroupMovementConstraints_getLowerSequence() {
+	__declspec(naked) NI::Sequence* calcRootMovement_getLowerSequence() {
 		__asm {
 			mov ecx, [esi + 0x7E4]	// ecx = esi->customLayers.begin
 			lea eax, [eax + eax*2]
@@ -497,12 +590,12 @@ namespace TES3 {
 			ret
 		}
 	}
-	__declspec(naked) void patchCheckAnimGroupMovementConstraints() {
+	__declspec(naked) void patchCalcRootMovement() {
 		__asm {
 			test ecx, ecx
 		}
 	}
-	const size_t patchCheckAnimGroupMovementConstraints_size = 0x2;
+	const size_t patchCalcRootMovement_size = 0x2;
 
 	__declspec(naked) NI::Sequence* setSequencePlayback_getSequence() {
 		__asm {
@@ -693,12 +786,12 @@ namespace TES3 {
 		genCallUnprotected(0x46E68A, reinterpret_cast<DWORD>(update_getUpperSequence), 0xA);
 		genCallUnprotected(0x46E6B2, reinterpret_cast<DWORD>(update_getLeftArmSequence), 0xA);
 
-		genCallUnprotected(0x46FDCB, reinterpret_cast<DWORD>(checkAnimGroupMovementConstraints_getLowerSequence), 0xA);
-		writePatchCodeUnprotected(0x46FDD3, reinterpret_cast<BYTE*>(patchCheckAnimGroupMovementConstraints), patchCheckAnimGroupMovementConstraints_size);
-		genCallUnprotected(0x46FEAE, reinterpret_cast<DWORD>(checkAnimGroupMovementConstraints_getLowerSequence), 0x9);
-		genCallUnprotected(0x4700C0, reinterpret_cast<DWORD>(checkAnimGroupMovementConstraints_getLowerSequence), 0x9);
+		genCallUnprotected(0x46FDCB, reinterpret_cast<DWORD>(calcRootMovement_getLowerSequence), 0xA);
+		writePatchCodeUnprotected(0x46FDD3, reinterpret_cast<BYTE*>(patchCalcRootMovement), patchCalcRootMovement_size);
+		genCallUnprotected(0x46FEAE, reinterpret_cast<DWORD>(calcRootMovement_getLowerSequence), 0x9);
+		genCallUnprotected(0x4700C0, reinterpret_cast<DWORD>(calcRootMovement_getLowerSequence), 0x9);
 		genNOPUnprotected(0x470105, 0x3);
-		genCallUnprotected(0x47010B, reinterpret_cast<DWORD>(checkAnimGroupMovementConstraints_getLowerSequence), 0x6);
+		genCallUnprotected(0x47010B, reinterpret_cast<DWORD>(calcRootMovement_getLowerSequence), 0x6);
 
 		genCallUnprotected(0x470E22, reinterpret_cast<DWORD>(setSequencePlayback_getSequence), 0xB);
 		genCallUnprotected(0x470E61, reinterpret_cast<DWORD>(setSequencePlayback_getSequence), 0xB);

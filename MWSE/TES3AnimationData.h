@@ -128,6 +128,8 @@ namespace TES3 {
 		// Custom functions.
 		//
 
+		void mergeAnimGroup(AnimationGroup* animGroup, int layerIndex);
+		void mergeAnimGroups(AnimationGroup* animGroup, int layerIndex);
 		void onSectionInheritAnim(int bodySection);
 
 		bool addCustomAnim(KeyframeDefinition* kfData);
