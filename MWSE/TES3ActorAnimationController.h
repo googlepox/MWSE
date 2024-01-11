@@ -9,18 +9,6 @@
 #include "NIProperty.h"
 
 namespace TES3 {
-	struct KeyframeDefinition {
-		const char* filename; // 0x0
-		NI::Sequence* sequences[3];
-		AnimationGroup* animationGroup; // 0x10
-		unsigned short groupCount; // 0x14
-		unsigned short refCount; // 0x16
-
-		KeyframeDefinition() = delete;
-		~KeyframeDefinition() = delete;
-	};
-	static_assert(sizeof(KeyframeDefinition) == 0x18, "TES3::KeyframeDefinition failed size validation");
-
 	struct ActorAnimationController_VirtualTable {
 		void(__thiscall* destructor)(ActorAnimationController*, int); // 0x0
 		void(__thiscall* update)(ActorAnimationController*, float); // 0x4

@@ -2,6 +2,8 @@
 
 #include "TES3Object.h"
 
+#include "NIDefines.h"
+
 namespace TES3 {
 	enum class AnimGroupID : unsigned char {
 		Idle,
@@ -212,6 +214,20 @@ namespace TES3 {
 	};
 	static_assert(sizeof(AnimationGroup) == 0x2C, "TES3::AnimationGroup failed size validation");
 	static_assert(sizeof(AnimationGroup::SoundGenKey) == 0x14, "TES3::AnimationGroup::SoundGenKey failed size validation");
+
+	struct KeyframeDefinition {
+		const char* filename; // 0x0
+		NI::Sequence* sequences[3]; // 0x4
+		AnimationGroup* animationGroups; // 0x10
+		unsigned short groupCount; // 0x14
+		unsigned short refCount; // 0x16
+
+		KeyframeDefinition() = delete;
+		~KeyframeDefinition() = delete;
+
+		static int parseSeqTextKeysToAnimGroups(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups);
+	};
+	static_assert(sizeof(KeyframeDefinition) == 0x18, "TES3::KeyframeDefinition failed size validation");
 }
 
 MWSE_SOL_CUSTOMIZED_PUSHER_DECLARE_TES3(TES3::AnimationGroup)

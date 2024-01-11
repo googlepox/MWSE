@@ -1,6 +1,5 @@
 #include "TES3ActorAnimationControllerLua.h"
 
-#include "LuaUtil.h"
 #include "LuaManager.h"
 
 #include "TES3ActorAnimationController.h"
@@ -51,23 +50,6 @@ namespace mwse::lua {
 
 			// Basic function binding.
 			usertypeDefinition["calculateAttackSwing"] = &TES3::ActorAnimationController::calculateAttackSwing;
-		}
-
-		// Bind TES3::KeyframeDefinition
-		{
-			// Start our usertype.
-			auto usertypeDefinition = state.new_usertype<TES3::KeyframeDefinition>("tes3keyframeDefinition");
-			usertypeDefinition["new"] = sol::no_constructor;
-			usertypeDefinition[sol::meta_function::to_string] = [](const TES3::KeyframeDefinition* self) {
-				return std::string("KeyframeDefinition: ") + self->filename;
-			};
-
-			// Basic property binding.
-			usertypeDefinition["filename"] = sol::readonly_property(&TES3::KeyframeDefinition::filename);
-			usertypeDefinition["sequences"] = sol::readonly_property([](TES3::KeyframeDefinition& kf) { return std::ref(kf.sequences); });
-			usertypeDefinition["animationGroup"] = sol::readonly_property(&TES3::KeyframeDefinition::animationGroup);
-			usertypeDefinition["groupCount"] = sol::readonly_property(&TES3::KeyframeDefinition::groupCount);
-			usertypeDefinition["refCount"] = sol::readonly_property(&TES3::KeyframeDefinition::refCount);
 		}
 	}
 }

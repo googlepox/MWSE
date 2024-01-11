@@ -100,7 +100,7 @@ namespace TES3 {
 		constexpr int specialLayerIndex = 0;
 		bool success = setLayerKeyframes(kfData, specialLayerIndex, true);
 		if (success) {
-			mergeAnimGroups(kfData->animationGroup, specialLayerIndex);
+			mergeAnimGroups(kfData->animationGroups, specialLayerIndex);
 		}
 		return success;
 	}
@@ -369,7 +369,7 @@ namespace TES3 {
 		}
 
 		// Merge in groups from this anim.
-		mergeAnimGroups(kfData->animationGroup, layer);
+		mergeAnimGroups(kfData->animationGroups, layer);
 
 		// Reset timing for any currently running anims using new data.
 		for (int i = 0; i < BodySectionCount; ++i) {
@@ -421,7 +421,7 @@ namespace TES3 {
 				for (int v = 0; v < VanillaLayerCount; ++v) {
 					auto vanillaAnim = customAnims[v];
 					if (vanillaAnim) {
-						auto vanillaGroup = vanillaAnim->animationGroup->findGroup(AnimGroupID(groupId));
+						auto vanillaGroup = vanillaAnim->animationGroups->findGroup(AnimGroupID(groupId));
 						if (vanillaGroup) {
 							mergeAnimGroup(vanillaGroup, v);
 							break;
@@ -469,7 +469,7 @@ namespace TES3 {
 		// Merge in vanilla animations in order.
 		for (int layer = BaseAnimLayerIndex; layer >= 0; --layer) {
 			if (customAnims[layer]) {
-				mergeAnimGroups(customAnims[layer]->animationGroup, layer);
+				mergeAnimGroups(customAnims[layer]->animationGroups, layer);
 			}
 		}
 
@@ -756,6 +756,9 @@ namespace TES3 {
 		// Patch: Allow changing cast animation speed. Custom speed is read and applied on initial cast.
 		writePatchCodeUnprotected(0x46CAC0, reinterpret_cast<BYTE*>(&patchApplyAnimationSpeed), patchApplyAnimationSpeed_size);
 		genCallUnprotected(0x541B81, reinterpret_cast<DWORD>(&setAnimSpeedOnCast), 0xA);
+
+		// Replace text key to animation group parser.
+		genCallEnforced(0x4EDC8A, 0x4C30F0, reinterpret_cast<DWORD>(&KeyframeDefinition::parseSeqTextKeysToAnimGroups));
 
 		// Patch every setLayerKeyframes call.
 		auto AnimationDataExtended_setLayerKeyframes = &AnimationData::setLayerKeyframes;

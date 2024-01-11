@@ -32,6 +32,12 @@ namespace TES3 {
 	nonstd::span<AnimationGroup::SoundGenKey> AnimationGroup::getSoundGenKeys() {
 		return { soundGenKeys, soundGenCount };
 	}
+
+	const auto TES3_parseSeqTextKeysToAnimGroups = reinterpret_cast<int(__cdecl*)(NI::Sequence*, const char*, AnimationGroup**)>(0x4C30F0);
+	int KeyframeDefinition::parseSeqTextKeysToAnimGroups(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups) {
+		return TES3_parseSeqTextKeysToAnimGroups(sequence, meshPath, pAnimationGroups);
+	}
+
 }
 
 MWSE_SOL_CUSTOMIZED_PUSHER_DEFINE_TES3(TES3::AnimationGroup)
