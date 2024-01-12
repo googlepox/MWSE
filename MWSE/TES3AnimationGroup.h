@@ -199,7 +199,13 @@ namespace TES3 {
 		// Other related this-call functions.
 		//
 
+		AnimationGroup* ctor(int animGroupId);
+		void dtor();
+
 		void calcNoteTimes();
+		void setSoundGenCount(unsigned int newCount);
+		void setSoundGenVolume(unsigned int index, float volume);
+		void setSoundGenPitch(unsigned int index, float volume);
 
 		//
 		// Custom functions.

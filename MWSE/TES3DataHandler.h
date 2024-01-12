@@ -158,6 +158,7 @@ namespace TES3 {
 		Dialogue* findDialogue(const char*);
 		bool addSound(Sound*);
 		Sound* findSound(const char*);
+		Sound* getSoundGeneratorSound(Actor*, int);
 		Class* findClass(const char*);
 		Faction* findFaction(const char*);
 		Reference* findClosestExteriorReferenceOfObject(PhysicalObject* object, Vector3* position, bool searchForExteriorDoorMarker = false, int ignored = -1);

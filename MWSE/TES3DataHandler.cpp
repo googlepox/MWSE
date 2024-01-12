@@ -377,6 +377,11 @@ namespace TES3 {
 		return TES3_NonDynamicData_findSound(this, id);
 	}
 
+	const auto TES3_NonDynamicData_getSoundGeneratorSound = reinterpret_cast<Sound * (__thiscall*)(NonDynamicData*, Actor*, int)>(0x4C7E60);
+	Sound* NonDynamicData::getSoundGeneratorSound(Actor* actor, int index) {
+		return TES3_NonDynamicData_getSoundGeneratorSound(this, actor, index);
+	}
+
 	const auto TES3_NonDynamicData_findClass = reinterpret_cast<Class * (__thiscall*)(NonDynamicData*, const char*)>(0x4BA6B0);
 	Class* NonDynamicData::findClass(const char* id) {
 		return TES3_NonDynamicData_findClass(this, id);

@@ -1,9 +1,50 @@
 #include "TES3AnimationGroup.h"
 
+#include "TES3Creature.h"
+#include "TES3DataHandler.h"
+#include "TES3Sound.h"
+
+#include "NIKeyframeManager.h"
+
+#include <string>
+#include <string_view>
+#include <unordered_map>
+
+#include "Log.h"
+
 namespace TES3 {
+	/// <summary>
+	/// AnimationGroup
+	/// </summary>
+
+	const auto TES3_AnimationGroup_ctor = reinterpret_cast<AnimationGroup*(__thiscall*)(AnimationGroup*, int)>(0x4927F0);
+	AnimationGroup* AnimationGroup::ctor(int animGroupId) {
+		return TES3_AnimationGroup_ctor(this, animGroupId);
+	}
+
+	const auto TES3_AnimationGroup_dtor = reinterpret_cast<void(__thiscall*)(AnimationGroup*)>(0x492880);
+	void AnimationGroup::dtor() {
+		TES3_AnimationGroup_dtor(this);
+	}
+
 	const auto TES3_AnimationGroup_calcNoteTimes = reinterpret_cast<void(__thiscall*)(AnimationGroup*)>(0x492B70);
 	void AnimationGroup::calcNoteTimes() {
 		TES3_AnimationGroup_calcNoteTimes(this);
+	}
+
+	const auto TES3_AnimationGroup_setSoundGenCount = reinterpret_cast<void(__thiscall*)(AnimationGroup*, unsigned int)>(0x492980);
+	void AnimationGroup::setSoundGenCount(unsigned int newCount) {
+		TES3_AnimationGroup_setSoundGenCount(this, newCount);
+	}
+
+	const auto TES3_AnimationGroup_setSoundGenVolume = reinterpret_cast<void(__thiscall*)(AnimationGroup*, unsigned int, float)>(0x492B20);
+	void AnimationGroup::setSoundGenVolume(unsigned int index, float volume) {
+		TES3_AnimationGroup_setSoundGenVolume(this, index, volume);
+	}
+
+	const auto TES3_AnimationGroup_setSoundGenPitch = reinterpret_cast<void(__thiscall*)(AnimationGroup*, unsigned int, float)>(0x492B50);
+	void AnimationGroup::setSoundGenPitch(unsigned int index, float pitch) {
+		TES3_AnimationGroup_setSoundGenPitch(this, index, pitch);
 	}
 
 	AnimationGroup* AnimationGroup::findGroup(AnimGroupID id) {
@@ -33,9 +74,389 @@ namespace TES3 {
 		return { soundGenKeys, soundGenCount };
 	}
 
+	/// <summary>
+	/// Animation text key parser.
+	/// </summary>
+
+	// Replicate Morrowind's 15 fps action timing.
+	int timeToFrameNumber(float time) {
+		return std::lrint(15.0f * time);
+	}
+
+	float frameNumberToTime(int frame) {
+		return frame / 15.0f;
+	}
+
+	// Case-insensitive operations for string_view.
+	bool textCIEquals(const std::string_view& text, const std::string_view& s) {
+		if (text.length() != s.length()) {
+			return false;
+		}
+		return _strnicmp(text.data(), s.data(), text.length()) == 0;
+	}
+
+	bool textCIEquals(const std::string_view& text, const char* s) {
+		if (text.length() != std::strlen(s)) {
+			return false;
+		}
+		return _strnicmp(text.data(), s, text.length()) == 0;
+	}
+
+	bool textCIStartsWith(const std::string_view& text, const char* startsWith) {
+		return _strnicmp(text.data(), startsWith, std::strlen(startsWith)) == 0;
+	}
+
+	struct TextKeyParser {
+		using string = std::string;
+		using string_view = std::string_view;
+
+		AnimationGroup* firstGroup;
+		AnimationGroup* lastGroup;
+		std::vector<AnimationGroup*> activeAnimGroups;
+		std::vector<AnimationGroup*> expireGroups;
+		Creature* matchedCreature;
+
+		static inline std::unordered_map<string, AnimGroupID> mapAnimationNames;
+
+		TextKeyParser() : firstGroup(nullptr), lastGroup(nullptr), matchedCreature(nullptr) {}
+
+		int parse(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups);
+		void parseNoteAction(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue);
+		void parseNoteSound(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue);
+		void testResult(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups);
+		static void preCacheMappings();
+	};
+
+	const auto TES3_soundGenGenericNames = reinterpret_cast<const char**>(0x7B064C);
+	const auto TES3_soundGenGenericNamesEnd = TES3_soundGenGenericNames + 8;
+	const auto TES3_animGroupNames = reinterpret_cast<const char**>(0x78A970);
+	const auto TES3_animGroupActionIds = reinterpret_cast<int*>(0x78B300);
+	const auto TES3_animActionTextByActionClass = reinterpret_cast<const char**>(0x78ABC8);
+
+	int TextKeyParser::parse(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups) {
+		// Pre-convert animation string tables.
+		preCacheMappings();
+
+		// Find creature for soundgens by matching meshPath.
+		auto records = DataHandler::get()->nonDynamicData;
+		matchedCreature = nullptr;
+		for (auto iterObject : *records->list) {
+			if (iterObject->objectType == ObjectType::Creature) {
+				auto creatureMeshPath = iterObject->getModelPath();
+				if (_stricmp(creatureMeshPath, meshPath) == 0) {
+					matchedCreature = static_cast<Creature*>(iterObject);
+					break;
+				}
+			}
+		}
+
+		// Currently active animations.
+		// Animation notes can overlap multiple anims, but only for action classes 0-2.
+		AnimationGroup* lastAnimGroup = nullptr;
+		mwse::log::getLog() << "[AnimParser] Parsing kf text keys for " << meshPath << std::endl;
+
+		for (auto& key : sequence->textKeys->getKeys()) {
+			if (!key.text) {
+				continue;
+			}
+
+			// Process multi-line text key.
+			const char* p = key.text;
+
+			while (*p != '\0') {
+				// Trim newlines.
+				while (*p == '\r' || *p == '\n') { ++p; }
+
+				// Search for end of note. Trim trailing spaces.
+				const char* noteBegin = p;
+				while (*p != '\0' && *p != '\r' && *p != '\n') { ++p; }
+				const char* noteEnd = p;
+				while (noteEnd != noteBegin && noteEnd[-1] == ' ') { --noteEnd; }
+				string_view note{ noteBegin, (size_t)std::distance(noteBegin, noteEnd) };
+
+				// Split note into key and value.
+				auto splitAt = std::find(note.begin(), note.end(), ':');
+				if (splitAt != note.end()) {
+					auto valueBegin = splitAt + 1;
+					while (valueBegin != note.end() && *valueBegin == ' ') { ++valueBegin; }
+
+					string_view noteKey{ noteBegin, (size_t)std::distance(note.begin(), splitAt) };
+					string_view noteValue{ &*valueBegin, (size_t)std::distance(valueBegin, note.end()) };
+
+					// Dispatch based on key name.
+					if (textCIEquals(noteKey, "Sound") || textCIEquals(noteKey, "SoundGen")) {
+						parseNoteSound(key, noteKey, noteValue);
+					}
+					else {
+						parseNoteAction(key, noteKey, noteValue);
+					}
+				}
+
+				// Skip to next newline.
+				while (*p != '\0' && *p != '\n') { ++p; }
+			}
+
+			// Remove expiring groups after all other notes in the key have been applied.
+			auto iterErase = std::remove_if(
+				activeAnimGroups.begin(), activeAnimGroups.end(),
+				[&](AnimationGroup* g) {
+					return std::find(expireGroups.begin(), expireGroups.end(), g) != expireGroups.end();
+				}
+			);
+			activeAnimGroups.erase(iterErase, activeAnimGroups.end());
+			expireGroups.clear();
+		}
+
+		// Assign data and count groups for return value.
+		*pAnimationGroups = firstGroup;
+
+		int groupCount = 0;
+		for (auto g = firstGroup; g; g = g->nextGroup) {
+			++groupCount;
+		}
+		return groupCount;
+	}
+
+	void TextKeyParser::parseNoteAction(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue) {
+		// Check for animation id.
+		std::string lowercaseName{ noteKey };
+		std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), [](unsigned char c) { return std::tolower(c); });
+		auto iterAnimName = mapAnimationNames.find(lowercaseName);
+		if (iterAnimName == mapAnimationNames.end()) {
+			mwse::log::getLog() << "[AnimParser] Unknown animation id '" << noteKey << "'" << std::endl;
+			return;
+		}
+
+		auto matchedGroupId = iterAnimName->second;
+		auto actionClass = AnimationGroup::getActionClass(matchedGroupId);
+		AnimationGroup* newGroup = nullptr;
+
+		auto iterActionIndex = &TES3_animGroupActionIds[39 * int(matchedGroupId)];
+		for (int i = 0; i < 39 && *iterActionIndex != -1; ++i, ++iterActionIndex) {
+			auto actionIndex = *iterActionIndex;
+			auto actionText = TES3_animActionTextByActionClass[8 * actionIndex + int(actionClass)];
+
+			// Note this is a prefix match. e.g. actionText could be "Stop."
+			if (textCIStartsWith(noteValue, actionText)) {
+				// Find if the animation group exists already. Check active anim groups first, then all groups.
+				AnimationGroup* animGroup = nullptr;
+				auto iterMatchedGroup = std::find_if(
+					activeAnimGroups.begin(), activeAnimGroups.end(),
+					[&](AnimationGroup* g) { return g->groupId == matchedGroupId; }
+				);
+				if (iterMatchedGroup != activeAnimGroups.end()) {
+					animGroup = *iterMatchedGroup;
+				}
+				else {
+					for (auto g = firstGroup; g; g = g->nextGroup) {
+						if (g->groupId == matchedGroupId) {
+							activeAnimGroups.emplace_back(g);
+							animGroup = g;
+							break;
+						}
+					}
+				}
+
+				if (animGroup == nullptr) {
+					// Sound notes can apply to multiple overlapping anims, but only for action classes 0-2.
+					// On new anim group, clear all active non-overlapping action class anims.
+					auto iterErase = std::remove_if(activeAnimGroups.begin(), activeAnimGroups.end(),
+						[&](AnimationGroup* g) { return AnimationGroup::getActionClass(g->groupId) > AnimGroupActionClass::CreatureAttack; }
+					);
+					if (iterErase != activeAnimGroups.end()) {
+						activeAnimGroups.erase(iterErase, activeAnimGroups.end());
+					}
+
+					// Construct new anim group.
+					newGroup = mwse::tes3::_new<AnimationGroup>();
+					newGroup->ctor(int(matchedGroupId));
+					activeAnimGroups.emplace_back(newGroup);
+					animGroup = newGroup;
+				}
+
+				// Set action timing. The conditional is a safety check to avoid array overrun.
+				if (actionIndex < animGroup->actionCount) {
+					animGroup->actionFrames[actionIndex] = timeToFrameNumber(key.time);
+
+					// Propagate Start/End timing to missing Loop Start/Loop End timing.
+					if (actionClass == AnimGroupActionClass::Looping) {
+						if (actionIndex == 0 && animGroup->actionFrames[2] == 0) {
+							animGroup->actionFrames[2] = animGroup->actionFrames[actionIndex];
+						}
+						else if (actionIndex == 1 && animGroup->actionFrames[3] == 0) {
+							animGroup->actionFrames[3] = animGroup->actionFrames[actionIndex];
+						}
+					}
+				}
+
+				// Sound notes can apply to multiple overlapping anims, but only for action classes 0-2.
+				// Remove them from the active list on their end actions.
+				constexpr int AnimGroupAction_Looping_End = 1;
+				constexpr int AnimGroupAction_CreatureAttack_End = 2;
+				switch (actionClass) {
+				case AnimGroupActionClass::NonLooping:
+				case AnimGroupActionClass::Looping:
+					if (actionIndex == AnimGroupAction_Looping_End) {
+						expireGroups.emplace_back(animGroup);
+					}
+					break;
+				case AnimGroupActionClass::CreatureAttack:
+					if (actionIndex == AnimGroupAction_CreatureAttack_End) {
+						expireGroups.emplace_back(animGroup);
+					}
+					break;
+				}
+				break;
+			}
+		}
+
+		if (newGroup) {
+			// Append to anim group chain.
+			if (lastGroup) {
+				lastGroup->nextGroup = newGroup;
+			}
+			else {
+				firstGroup = newGroup;
+			}
+			lastGroup = newGroup;
+		}
+	}
+
+	void TextKeyParser::parseNoteSound(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue) {
+		auto records = DataHandler::get()->nonDynamicData;
+		Sound* matchedSound = nullptr;
+		std::optional<float> volumeParam, pitchParam;
+
+		// Sounds and soundgens can have volume and pitch parameters.
+		// Sound ids can have spaces in them, but spaces are also parameter separators.
+		// The parser first checks for ',' and if it exists accepts spaces in the value, else falls back to ' '.
+		auto param1 = std::find(noteValue.begin(), noteValue.end(), ',');
+		if (param1 == noteValue.end()) {
+			param1 = std::find(noteValue.begin(), noteValue.end(), ' ');
+		}
+		if (param1 != noteValue.end()) {
+			while (*param1 == ' ') { ++param1; }
+			volumeParam = float(std::atof(&*param1));
+		}
+		auto param2 = std::find(param1, noteValue.end(), ',');
+		if (param2 == noteValue.end()) {
+			param2 = std::find(param1, noteValue.end(), ' ');
+		}
+		if (param2 != noteValue.end()) {
+			while (*param2 == ' ') { ++param2; }
+			pitchParam = float(std::atof(&*param2));
+		}
+
+		if (textCIEquals(noteKey, "SoundGen")) {
+			// Convert soundgens to sounds based on creature.
+			auto iterSoundGenName = std::find_if(
+				TES3_soundGenGenericNames, TES3_soundGenGenericNamesEnd,
+				[&](const char* x) { return textCIStartsWith(noteValue, x); }
+			);
+			if (iterSoundGenName != TES3_soundGenGenericNamesEnd) {
+				int index = iterSoundGenName - TES3_soundGenGenericNames;
+				matchedSound = records->getSoundGeneratorSound(matchedCreature, index);
+			}
+		}
+		else { // noteKey is "Sound"
+			string id{ noteValue };
+			matchedSound = records->findSound(id.c_str());
+		}
+
+		if (matchedSound) {
+			// Apply sound to active groups.
+			for (auto animGroup : activeAnimGroups) {
+				int newIndex = animGroup->soundGenCount;
+				animGroup->setSoundGenCount(animGroup->soundGenCount + 1);
+				auto soundGen = &animGroup->soundGenKeys[newIndex];
+
+				soundGen->startFrame = timeToFrameNumber(key.time);
+				soundGen->sound = matchedSound;
+				if (volumeParam) {
+					animGroup->setSoundGenVolume(newIndex, volumeParam.value());
+				}
+				if (pitchParam) {
+					animGroup->setSoundGenPitch(newIndex, pitchParam.value());
+				}
+			}
+		}
+	}
+
 	const auto TES3_parseSeqTextKeysToAnimGroups = reinterpret_cast<int(__cdecl*)(NI::Sequence*, const char*, AnimationGroup**)>(0x4C30F0);
+	void TextKeyParser::testResult(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups) {
+		// Compare to vanilla. Note that the vanilla parser will modify the text keys in-place.
+		AnimationGroup* standardParseGroups = nullptr;
+		int standardParseCount = TES3_parseSeqTextKeysToAnimGroups(sequence, meshPath, &standardParseGroups);
+
+		int newParseCount = 0;
+		for (const AnimationGroup* agNew = *pAnimationGroups; agNew; agNew = agNew->nextGroup, ++newParseCount) {}
+		mwse::log::getLog() << "[AnimParser] Testing anim=" << meshPath << std::endl;
+		mwse::log::getLog() << "[AnimParser] Group count std=" << standardParseCount << " new=" << newParseCount << std::endl;
+
+		const AnimationGroup* agStd = standardParseGroups;
+		for (const AnimationGroup* agNew = *pAnimationGroups; agNew && agStd; agNew = agNew->nextGroup, agStd = agStd->nextGroup) {
+			mwse::log::getLog() << "[AnimParser] Checking group=" << TES3_animGroupNames[int(agNew->groupId)] << std::endl;
+			if (agNew->groupId != agStd->groupId) {
+				mwse::log::getLog() << "[AnimParser] TEST FAIL groupId std=" << TES3_animGroupNames[int(agStd->groupId)] << " new=" << TES3_animGroupNames[int(agNew->groupId)] << std::endl;
+			}
+			if (agNew->actionCount != agStd->actionCount) {
+				mwse::log::getLog() << "[AnimParser] TEST FAIL actionCount std=" << int(agStd->actionCount) << " new=" << int(agNew->actionCount) << std::endl;
+			}
+			else {
+				if (memcmp(agNew->actionFrames, agStd->actionFrames, agStd->actionCount * sizeof(agStd->actionFrames[0])) != 0) {
+					mwse::log::getLog() << "[AnimParser] TEST FAIL actionFrames" << std::endl;
+					for (unsigned int i = 0; i < agStd->actionCount; ++i) {
+						mwse::log::getLog() << "[AnimParser]     act " << i << ": std=" << agStd->actionFrames[i] << " new=" << agNew->actionFrames[i] << std::endl;
+					}
+				}
+			}
+			if (agNew->soundGenCount != agStd->soundGenCount) {
+				mwse::log::getLog() << "[AnimParser] TEST FAIL soundGenCount std=" << int(agStd->soundGenCount) << " new=" << int(agNew->soundGenCount) << std::endl;
+			}
+			else {
+				for (unsigned int i = 0; i < agStd->soundGenCount; ++i) {
+					auto s1 = &agStd->soundGenKeys[i], s2 = &agNew->soundGenKeys[i];
+					if (s1->startFrame != s2->startFrame
+						|| s1->startTime != s2->startTime
+						|| s1->volume != s2->volume
+						|| s1->pitch != s2->pitch
+						|| s1->sound != s2->sound) {
+						mwse::log::getLog() << "[AnimParser] TEST FAIL soundGenKeys" << std::endl;
+						mwse::log::getLog() << "    sound std " << i << ": frame=" << s1->startFrame << ", timing=" << s1->startTime << ", vol=" << int(s1->volume) << ", pitch=" << s1->pitch << ", sound=" << std::hex << (s1->sound ? s1->sound->id : "(null)") << std::dec << std::endl;
+						mwse::log::getLog() << "    sound new " << i << ": frame=" << s2->startFrame << ", timing=" << s2->startTime << ", vol=" << int(s2->volume) << ", pitch=" << s2->pitch << ", sound=" << std::hex << (s2->sound ? s2->sound->id : "(null)") << std::dec << std::endl;
+					}
+				}
+			}
+		}
+
+		mwse::log::getLog() << "[AnimParser] Testing end anim=" << meshPath << std::endl;
+	}
+
+	void TextKeyParser::preCacheMappings() {
+		if (mapAnimationNames.empty()) {
+			// Build animation name to id map.
+			for (auto i = int(AnimGroupID::First); i <= int(AnimGroupID::Last); ++i) {
+				string lowercaseName{ TES3_animGroupNames[i] };
+				std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), [](unsigned char c) { return std::tolower(c); });
+				mapAnimationNames.emplace(lowercaseName, AnimGroupID(i));
+			}
+		}
+	}
+
 	int KeyframeDefinition::parseSeqTextKeysToAnimGroups(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups) {
-		return TES3_parseSeqTextKeysToAnimGroups(sequence, meshPath, pAnimationGroups);
+		*pAnimationGroups = nullptr;
+		if (!sequence || !sequence->textKeys) {
+			return 0;
+		}
+
+		// Call replacement parser.
+		TextKeyParser parser;
+		auto groupCount = parser.parse(sequence, meshPath, pAnimationGroups);
+
+		// Test against vanilla function.
+		parser.testResult(sequence, meshPath, pAnimationGroups);
+
+		return groupCount;
 	}
 
 }
