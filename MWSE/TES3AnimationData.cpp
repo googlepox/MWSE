@@ -302,12 +302,14 @@ namespace TES3 {
 		}
 		animGroupSoundGens[i] = nullptr;
 
-		// Copy new soundgen array from group.
+		// Derive new soundgen array from group.
 		auto soundGenCount = animGroup->soundGenCount;
 		animGroupSoundGenCounts[i] = soundGenCount;
 		if (soundGenCount > 0) {
 			auto soundGenArray = mwse::tes3::_new<AnimationGroup::SoundGenKey*>(soundGenCount);
-			memcpy(soundGenArray, animGroup->soundGenKeys, sizeof(soundGenArray[0]) * soundGenCount);
+			for (int i = 0; i < soundGenCount; ++i) {
+				soundGenArray[i] = animGroup->soundGenKeys + i;
+			}
 			animGroupSoundGens[i] = soundGenArray;
 		}
 	}
