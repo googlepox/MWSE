@@ -173,12 +173,25 @@ namespace TES3 {
 	};
 
 	struct AnimationGroup : BaseObject {
+		struct LuaEvent {
+			static constexpr unsigned int eventTag = 0x4541554C; // "LUAE"
+
+			unsigned int tag;
+			std::string id;
+			std::string param;
+
+			LuaEvent() : tag(eventTag) {}
+			static LuaEvent* toEvent(Sound* sound);
+		};
 		struct SoundGenKey {
 			int startFrame; // 0x0
 			float startTime; // 0x4
 			unsigned char volume; // 0x8
 			float pitch; // 0xC
-			Sound* sound; // 0x10
+			union { // 0x10
+				Sound* sound;
+				LuaEvent* event;
+			};
 
 			SoundGenKey() = delete;
 			~SoundGenKey() = delete;

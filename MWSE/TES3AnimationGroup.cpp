@@ -74,6 +74,11 @@ namespace TES3 {
 		return { soundGenKeys, soundGenCount };
 	}
 
+	AnimationGroup::LuaEvent* AnimationGroup::LuaEvent::toEvent(Sound* sound) {
+		LuaEvent* e = reinterpret_cast<LuaEvent*>(sound);
+		return (e->tag == eventTag) ? e : nullptr;
+	}
+
 	/// <summary>
 	/// Animation text key parser.
 	/// </summary>
@@ -123,6 +128,7 @@ namespace TES3 {
 		int parse(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups);
 		void parseNoteAction(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue);
 		void parseNoteSound(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue);
+		void parseNoteLuaEvent(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue);
 		void testResult(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups);
 		static void preCacheMappings();
 	};
@@ -186,6 +192,9 @@ namespace TES3 {
 					// Dispatch based on key name.
 					if (textCIEquals(noteKey, "Sound") || textCIEquals(noteKey, "SoundGen")) {
 						parseNoteSound(key, noteKey, noteValue);
+					}
+					else if (textCIEquals(noteKey, "LuaEvent")) {
+						parseNoteLuaEvent(key, noteKey, noteValue);
 					}
 					else {
 						parseNoteAction(key, noteKey, noteValue);
@@ -379,6 +388,40 @@ namespace TES3 {
 					animGroup->setSoundGenPitch(newIndex, pitchParam.value());
 				}
 			}
+		}
+	}
+
+	void TextKeyParser::parseNoteLuaEvent(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue) {
+		string_view eventParam;
+
+		// Decode event name and parameter. The parameter is the first text after a space.
+		auto iterSep = std::find(noteValue.begin(), noteValue.end(), ' ');
+		string_view eventName{ &*noteValue.begin(), (size_t)std::distance(noteValue.begin(), iterSep) };
+
+		if (iterSep != noteValue.end()) {
+			auto iterParam = iterSep;
+			while (*iterParam == ' ') { ++iterParam; }
+			eventParam = { &*iterParam, (size_t)std::distance(iterParam, noteValue.end()) };
+		}
+
+		if (eventName.empty()) {
+			return;
+		}
+
+		// Create new event data and place it in the soundgen array of active groups.
+		// TODO: This new object leaks a small amount of memory. This needs to be cleaned up, but it may be referenced in multiple anim groups.
+		mwse::log::getLog() << "[AnimParser] LuaEvent name=" << eventName << " param=" << eventParam << std::endl;
+		auto newEvent = new AnimationGroup::LuaEvent();
+		newEvent->id.assign(eventName);
+		newEvent->param.assign(eventParam);
+
+		for (auto animGroup : activeAnimGroups) {
+			int newIndex = animGroup->soundGenCount;
+			animGroup->setSoundGenCount(animGroup->soundGenCount + 1);
+			auto soundGen = &animGroup->soundGenKeys[newIndex];
+
+			soundGen->startFrame = timeToFrameNumber(key.time);
+			soundGen->event = newEvent;
 		}
 	}
 

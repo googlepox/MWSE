@@ -8,6 +8,7 @@
 #include "LuaManager.h"
 #include "MemoryUtil.h"
 
+#include "LuaAnimationTriggerEvent.h"
 #include "LuaPlayAnimationGroupEvent.h"
 
 namespace TES3 {
@@ -686,6 +687,43 @@ namespace TES3 {
 	const size_t patchOnSectionInheritAnim_size = 0x3;
 
 	//
+	// Patch: Lua events from animations. Dependent on new TES3::AnimationGroup parser.
+	//
+	bool __fastcall animUpdateSoundEvents_checkEvent(AnimationGroup::SoundGenKey* key, Reference* reference, bool flagExecuteEvent) {
+		if (!flagExecuteEvent || key->sound == nullptr) {
+			return false;
+		}
+
+		auto e = AnimationGroup::LuaEvent::toEvent(key->sound);
+		if (e) {
+			// This is really a "LuaEvent:" key. Signal an event.
+			if (mwse::lua::event::AnimationTriggerEvent::getEventEnabled()) {
+				auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
+				stateHandle.triggerEvent(new mwse::lua::event::AnimationTriggerEvent(reference, e->id, e->param));
+			}
+			// Don't try to play this as a sound.
+			return false;
+		}
+
+		// It's a regular sound.
+		return flagExecuteEvent;
+	}
+
+	__declspec(naked) void patchAnimUpdateSoundEvents() {
+		__asm {
+			mov edx, [esp + 0x24]	// edx = reference
+			push [esp + 0x28]		// push stack var flagPlaySound
+			call $					// replace with call target
+			test al, al
+			jz $ + 0x35F			// skip sound if false
+
+			xor bl, bl				// compacted code of next block
+			cmp esi, dword ptr [0x7C86D8]
+		}
+	}
+	const size_t patchAnimUpdateSoundEvents_size = 0x1D;
+
+	//
 	// Patch: Allow changing cast animation speed. Custom speed is read and applied on initial cast.
 	//
 
@@ -761,6 +799,8 @@ namespace TES3 {
 
 		// Replace text key to animation group parser.
 		genCallEnforced(0x4EDC8A, 0x4C30F0, reinterpret_cast<DWORD>(&KeyframeDefinition::parseSeqTextKeysToAnimGroups));
+		// Disable "Animation group note problem" warning triggered by testing custom notes.
+		mwse::writeByteUnprotected(0x4C3A71, 0xEB);
 
 		// Patch every setLayerKeyframes call.
 		auto AnimationDataExtended_setLayerKeyframes = &AnimationData::setLayerKeyframes;
@@ -823,6 +863,10 @@ namespace TES3 {
 		genCallUnprotected(0x46DA15, *reinterpret_cast<DWORD*>(&AnimationDataExtended_onSectionInheritAnim), 0x12);
 		writePatchCodeUnprotected(0x46E639, reinterpret_cast<BYTE*>(&patchOnSectionInheritAnim), patchOnSectionInheritAnim_size);
 		genCallUnprotected(0x46E63C, *reinterpret_cast<DWORD*>(&AnimationDataExtended_onSectionInheritAnim), 0x12);
+
+		// Patch animation sound events to also trigger lua events.
+		writePatchCodeUnprotected(0x46F553, reinterpret_cast<BYTE*>(&patchAnimUpdateSoundEvents), patchAnimUpdateSoundEvents_size);
+		genCallUnprotected(0x46F553 + 0x8, reinterpret_cast<DWORD>(animUpdateSoundEvents_checkEvent));
 	}
 
 }

@@ -9,6 +9,7 @@
 #include "LuaAddSoundEvent.h"
 #include "LuaAddTempSoundEvent.h"
 #include "LuaAddTopicEvent.h"
+#include "LuaAnimationTriggerEvent.h"
 #include "LuaAttackEvent.h"
 #include "LuaAttackHitEvent.h"
 #include "LuaAttackStartEvent.h"
@@ -176,6 +177,7 @@ namespace mwse::lua::event {
 		usertypeDefinition["activate"] = sol::property(&ActivateEvent::getEventEnabled, &ActivateEvent::setEventEnabled);
 		usertypeDefinition["activationTargetChanged"] = sol::property(&ActivationTargetChangedEvent::getEventEnabled, &ActivationTargetChangedEvent::setEventEnabled);
 		usertypeDefinition["activeMagicEffectIconsUpdated"] = sol::property(&ActiveMagicEffectIconsUpdatedEvent::getEventEnabled, &ActiveMagicEffectIconsUpdatedEvent::setEventEnabled);
+		usertypeDefinition["animationTrigger"] = sol::property(&AnimationTriggerEvent::getEventEnabled, &AnimationTriggerEvent::setEventEnabled);
 		usertypeDefinition["addSound"] = sol::property(&AddSoundEvent::getEventEnabled, &AddSoundEvent::setEventEnabled);
 		usertypeDefinition["addTempSound"] = sol::property(&AddTempSoundEvent::getEventEnabled, &AddTempSoundEvent::setEventEnabled);
 		usertypeDefinition["attack"] = sol::property(&AttackEvent::getEventEnabled, &AttackEvent::setEventEnabled);

@@ -14,6 +14,7 @@
     <ClInclude Include="ArrayUtil.h" />
     <ClInclude Include="BitUtil.h" />
     <ClInclude Include="BSAnimationManager.h" />
+    <ClInclude Include="LuaAnimationTriggerEvent.h" />
     <ClInclude Include="LuaCalcChargenStatsEvent.h" />
     <ClInclude Include="LuaCalcHitDetectionConeEvent.h" />
     <ClInclude Include="LuaDialogueFilteredEvent.h" />
@@ -543,6 +544,7 @@
     <ClCompile Include="LuaActivationTargetChangedEvent.cpp" />
     <ClCompile Include="LuaActiveMagicEffectIconsUpdatedEvent.cpp" />
     <ClCompile Include="LuaAddTopicEvent.cpp" />
+    <ClCompile Include="LuaAnimationTriggerEvent.cpp" />
     <ClCompile Include="LuaAttackEvent.cpp" />
     <ClCompile Include="LuaAttackStartEvent.cpp" />
     <ClCompile Include="LuaAttackHitEvent.cpp" />
