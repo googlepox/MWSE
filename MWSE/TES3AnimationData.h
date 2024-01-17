@@ -52,7 +52,7 @@ namespace TES3 {
 		float blinkMorphEndTime; // 0x304
 		int currentAnimGroupLayer[3];
 		unsigned char animGroupLayerIndices[150]; // 0x314
-		short approxRootTravelDistances[150]; // 0x3AA
+		short approxRootTravelSpeeds[150]; // 0x3AA
 		unsigned short patchedCastSpeed; // 0x4D6 (8.8 fixed point format)
 		float movementSpeed; // 0x4D8
 		float weaponSpeed; // 0x4DC
@@ -100,7 +100,7 @@ namespace TES3 {
 		std::reference_wrapper<decltype(keyframeLayers)> getKeyframeLayers();
 		std::reference_wrapper<decltype(currentAnimGroupLayer)> getCurrentAnimGroupLayers();
 		std::reference_wrapper<decltype(animGroupLayerIndices)> getAnimGroupLayerIndices();
-		std::reference_wrapper<decltype(approxRootTravelDistances)> getApproxRootTravelDistances();
+		std::reference_wrapper<decltype(approxRootTravelSpeeds)> getApproxRootTravelSpeeds();
 		std::reference_wrapper<decltype(currentSoundGenIndices)> getCurrentSoundGenIndices();
 		std::reference_wrapper<decltype(animGroupSoundGenCounts)> getAnimGroupSoundGenCounts();
 		std::reference_wrapper<decltype(animGroupSoundGens)> getAnimGroupSoundGens();

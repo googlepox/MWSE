@@ -198,6 +198,7 @@ namespace TES3 {
 		};
 
 		AnimGroupID groupId; // 0x10
+		short patchedRootTravelSpeed; // 0x12
 		unsigned int actionCount; // 0x14
 		int* actionFrames; // 0x18
 		float* actionTimings; // 0x1C

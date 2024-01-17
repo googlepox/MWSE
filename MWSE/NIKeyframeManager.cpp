@@ -2,11 +2,22 @@
 
 #include "MemoryUtil.h"
 
+#include <algorithm>
+
 namespace NI {
 	const auto NI_Sequence_dtor = reinterpret_cast<void(__thiscall*)(Sequence*)>(0x70F720);
 	void Sequence::release() {
 		NI_Sequence_dtor(this);
 		mwse::tes3::free(this);
+	}
+
+	Pointer<KeyframeController> Sequence::getController(const char* name) const {
+		for (int i = 0; i < objectNames.endIndex; ++i) {
+			if (_stricmp(objectNames[i], name) == 0) {
+				return controllers[i].get();
+			}
+		}
+		return nullptr;
 	}
 
 	const auto NI_KeyframeManager_addSequence = reinterpret_cast<void(__thiscall*)(KeyframeManager*, Sequence*)>(0x7111A0);

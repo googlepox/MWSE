@@ -17,9 +17,18 @@ namespace TES3 {
 	/// AnimationGroup
 	/// </summary>
 
-	const auto TES3_AnimationGroup_ctor = reinterpret_cast<AnimationGroup*(__thiscall*)(AnimationGroup*, int)>(0x4927F0);
+	const auto TES3_AnimationGroup_ctor = reinterpret_cast<AnimationGroup* (__thiscall*)(AnimationGroup*, int)>(0x4927F0);
 	AnimationGroup* AnimationGroup::ctor(int animGroupId) {
-		return TES3_AnimationGroup_ctor(this, animGroupId);
+		TES3_AnimationGroup_ctor(this, animGroupId);
+
+		// Extra setup for the new anim parser.
+		patchedRootTravelSpeed = 0;
+		if (actionCount > 0) {
+			actionTimings = mwse::tes3::_new<float>(actionCount);
+			memset(actionTimings, 0, sizeof(float) * actionCount);
+		}
+
+		return this;
 	}
 
 	const auto TES3_AnimationGroup_dtor = reinterpret_cast<void(__thiscall*)(AnimationGroup*)>(0x492880);
@@ -83,7 +92,7 @@ namespace TES3 {
 	/// Animation text key parser.
 	/// </summary>
 
-	// Replicate Morrowind's 15 fps action timing.
+	// Replicate Morrowind's 15 fps action timing. Used for testing only.
 	int timeToFrameNumber(float time) {
 		return std::lrint(15.0f * time);
 	}
@@ -115,6 +124,16 @@ namespace TES3 {
 		using string = std::string;
 		using string_view = std::string_view;
 
+		struct ActionIndex {
+			enum {
+				Looping_Start = 0,
+				Looping_End = 1,
+				CreatureAttack_End = 2,
+				Looping_LoopStart = 2,
+				Looping_LoopEnd = 3,
+			};
+		};
+
 		AnimationGroup* firstGroup;
 		AnimationGroup* lastGroup;
 		std::vector<AnimationGroup*> activeAnimGroups;
@@ -129,6 +148,7 @@ namespace TES3 {
 		void parseNoteAction(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue);
 		void parseNoteSound(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue);
 		void parseNoteLuaEvent(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue);
+		float measureRootMovementSpeedOverLoop(NI::TimeController* rootController, AnimationGroup* animGroup);
 		void testResult(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups);
 		static void preCacheMappings();
 	};
@@ -216,13 +236,28 @@ namespace TES3 {
 			expireGroups.clear();
 		}
 
-		// Assign data and count groups for return value.
-		*pAnimationGroups = firstGroup;
+		// Calculate root movement and count groups.
+		auto rootController = sequence->getController("Bip01");
+		if (rootController == nullptr) {
+			rootController = sequence->getController("Root Bone");
+		}
 
 		int groupCount = 0;
 		for (auto g = firstGroup; g; g = g->nextGroup) {
 			++groupCount;
+
+			if (rootController != nullptr) {
+				auto actionClass = AnimationGroup::getActionClass(g->groupId);
+				if (actionClass == AnimGroupActionClass::Looping) {
+					// Root movement measurement is over a loop cycle.
+					auto travelSpeed = measureRootMovementSpeedOverLoop(rootController, g);
+					g->patchedRootTravelSpeed = short(std::lrint(travelSpeed));
+				}
+			}
 		}
+
+		// Write to output pointer before finishing.
+		*pAnimationGroups = firstGroup;
 		return groupCount;
 	}
 
@@ -285,32 +320,33 @@ namespace TES3 {
 
 				// Set action timing. The conditional is a safety check to avoid array overrun.
 				if (actionIndex < animGroup->actionCount) {
+					animGroup->actionTimings[actionIndex] = key.time;
 					animGroup->actionFrames[actionIndex] = timeToFrameNumber(key.time);
 
 					// Propagate Start/End timing to missing Loop Start/Loop End timing.
 					if (actionClass == AnimGroupActionClass::Looping) {
-						if (actionIndex == 0 && animGroup->actionFrames[2] == 0) {
-							animGroup->actionFrames[2] = animGroup->actionFrames[actionIndex];
+						if (actionIndex == 0 && animGroup->actionFrames[ActionIndex::Looping_LoopStart] == 0) {
+							animGroup->actionTimings[ActionIndex::Looping_LoopStart] = animGroup->actionTimings[actionIndex];
+							animGroup->actionFrames[ActionIndex::Looping_LoopStart] = animGroup->actionFrames[actionIndex];
 						}
-						else if (actionIndex == 1 && animGroup->actionFrames[3] == 0) {
-							animGroup->actionFrames[3] = animGroup->actionFrames[actionIndex];
+						else if (actionIndex == 1 && animGroup->actionFrames[ActionIndex::Looping_LoopEnd] == 0) {
+							animGroup->actionTimings[ActionIndex::Looping_LoopEnd] = animGroup->actionTimings[actionIndex];
+							animGroup->actionFrames[ActionIndex::Looping_LoopEnd] = animGroup->actionFrames[actionIndex];
 						}
 					}
 				}
 
 				// Sound notes can apply to multiple overlapping anims, but only for action classes 0-2.
 				// Remove them from the active list on their end actions.
-				constexpr int AnimGroupAction_Looping_End = 1;
-				constexpr int AnimGroupAction_CreatureAttack_End = 2;
 				switch (actionClass) {
 				case AnimGroupActionClass::NonLooping:
 				case AnimGroupActionClass::Looping:
-					if (actionIndex == AnimGroupAction_Looping_End) {
+					if (actionIndex == ActionIndex::Looping_End) {
 						expireGroups.emplace_back(animGroup);
 					}
 					break;
 				case AnimGroupActionClass::CreatureAttack:
-					if (actionIndex == AnimGroupAction_CreatureAttack_End) {
+					if (actionIndex == ActionIndex::CreatureAttack_End) {
 						expireGroups.emplace_back(animGroup);
 					}
 					break;
@@ -379,6 +415,7 @@ namespace TES3 {
 				animGroup->setSoundGenCount(animGroup->soundGenCount + 1);
 				auto soundGen = &animGroup->soundGenKeys[newIndex];
 
+				soundGen->startTime = key.time;
 				soundGen->startFrame = timeToFrameNumber(key.time);
 				soundGen->sound = matchedSound;
 				if (volumeParam) {
@@ -420,9 +457,35 @@ namespace TES3 {
 			animGroup->setSoundGenCount(animGroup->soundGenCount + 1);
 			auto soundGen = &animGroup->soundGenKeys[newIndex];
 
+			soundGen->startTime = key.time;
 			soundGen->startFrame = timeToFrameNumber(key.time);
 			soundGen->event = newEvent;
 		}
+	}
+
+	float TextKeyParser::measureRootMovementSpeedOverLoop(NI::TimeController* rootController, AnimationGroup* animGroup) {
+		float loopStartTime = animGroup->actionTimings[ActionIndex::Looping_LoopStart];
+		float loopEndTime = animGroup->actionTimings[ActionIndex::Looping_LoopEnd];
+
+		if (loopEndTime > loopStartTime) {
+			// Invoke controller on temp node instead of activating the sequence.
+			NI::Node root;
+			NI::ObjectNET* target = &root;
+
+			std::swap(rootController->target, target);
+			rootController->setActive(true);
+			rootController->vTable.asController->update(rootController, loopStartTime);
+			Vector3 startPoint = root.localTranslate;
+			rootController->vTable.asController->update(rootController, loopEndTime);
+			Vector3 movement = root.localTranslate - startPoint;
+			rootController->setActive(false);
+
+			// Note that movement is measured in the XY plane.
+			std::swap(rootController->target, target);
+			movement.z = 0;
+			return movement.length() / (loopEndTime - loopStartTime);
+		}
+		return 0.0f;
 	}
 
 	const auto TES3_parseSeqTextKeysToAnimGroups = reinterpret_cast<int(__cdecl*)(NI::Sequence*, const char*, AnimationGroup**)>(0x4C30F0);
@@ -459,8 +522,8 @@ namespace TES3 {
 			else {
 				for (unsigned int i = 0; i < agStd->soundGenCount; ++i) {
 					auto s1 = &agStd->soundGenKeys[i], s2 = &agNew->soundGenKeys[i];
+					// startTime is a deferred calculation in vanilla.
 					if (s1->startFrame != s2->startFrame
-						|| s1->startTime != s2->startTime
 						|| s1->volume != s2->volume
 						|| s1->pitch != s2->pitch
 						|| s1->sound != s2->sound) {

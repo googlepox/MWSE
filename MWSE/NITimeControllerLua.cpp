@@ -323,7 +323,7 @@ namespace mwse::lua {
 			};
 
 			// Basic property binding.
-			usertypeDefinition["boneNames"] = sol::readonly_property(&NI::Sequence::boneNames);
+			usertypeDefinition["boneNames"] = sol::readonly_property(&NI::Sequence::objectNames);
 			usertypeDefinition["controllers"] = sol::readonly_property(&NI::Sequence::controllers);
 			usertypeDefinition["endPointTime"] = sol::readonly_property(&NI::Sequence::endPointTime);
 			usertypeDefinition["filename"] = sol::readonly_property(&NI::Sequence::filename);

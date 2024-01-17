@@ -37,6 +37,7 @@ namespace mwse::lua {
 			usertypeDefinition["actionCount"] = sol::readonly_property(&TES3::AnimationGroup::actionCount);
 			usertypeDefinition["actionFrames"] = sol::readonly_property(&TES3::AnimationGroup::getActionFrames);
 			usertypeDefinition["actionTimings"] = sol::readonly_property(&TES3::AnimationGroup::getActionTimings);
+			usertypeDefinition["approxRootTravelSpeed"] = sol::readonly_property(&TES3::AnimationGroup::patchedRootTravelSpeed);
 			usertypeDefinition["groupId"] = sol::readonly_property(&TES3::AnimationGroup::groupId);
 			usertypeDefinition["nextGroup"] = sol::readonly_property(&TES3::AnimationGroup::nextGroup);
 			usertypeDefinition["soundGenCount"] = sol::readonly_property(&TES3::AnimationGroup::soundGenCount);

@@ -117,7 +117,7 @@ namespace TES3 {
 		std::swap(animGroupLayerIndices[g1], animGroupLayerIndices[g2]);
 		std::swap(animGroupSoundGens[g1], animGroupSoundGens[g2]);
 		std::swap(animGroupSoundGenCounts[g1], animGroupSoundGenCounts[g2]);
-		std::swap(approxRootTravelDistances[g1], approxRootTravelDistances[g2]);
+		std::swap(approxRootTravelSpeeds[g1], approxRootTravelSpeeds[g2]);
 
 		// Fix up timing and sequence activation if the swap affects the currently playing animation.
 		for (int i = 0; i < 3; ++i) {
@@ -191,8 +191,8 @@ namespace TES3 {
 		return std::ref(animGroupLayerIndices);
 	}
 
-	std::reference_wrapper<decltype(AnimationDataVanilla::approxRootTravelDistances)> AnimationDataVanilla::getApproxRootTravelDistances() {
-		return std::ref(approxRootTravelDistances);
+	std::reference_wrapper<decltype(AnimationDataVanilla::approxRootTravelSpeeds)> AnimationDataVanilla::getApproxRootTravelSpeeds() {
+		return std::ref(approxRootTravelSpeeds);
 	}
 
 	std::reference_wrapper<decltype(AnimationDataVanilla::currentSoundGenIndices)> AnimationDataVanilla::getCurrentSoundGenIndices() {
@@ -291,11 +291,12 @@ namespace TES3 {
 			nextAnimGroup = AnimGroupID::Idle;
 		}
 
-		// Ensure derived data is calculated in correct order before use.
-		animGroup->calcNoteTimes();
+		// Set animation data, copying derived data from the animation group.
+		// This is changed from vanilla, which did not cache these calculations.
+		// AnimationGroup::calcNoteTimes and AnimationDataVanilla::calcRootMovement are now redundant.
 		animationGroups[i] = animGroup;
 		animGroupLayerIndices[i] = layerIndex;
-		calcRootMovement(groupId);
+		approxRootTravelSpeeds[i] = animGroup->patchedRootTravelSpeed;
 
 		// Clear existing soundgens.
 		if (animGroupSoundGens[i]) {
@@ -801,6 +802,20 @@ namespace TES3 {
 		genCallEnforced(0x4EDC8A, 0x4C30F0, reinterpret_cast<DWORD>(&KeyframeDefinition::parseSeqTextKeysToAnimGroups));
 		// Disable "Animation group note problem" warning triggered by testing custom notes.
 		mwse::writeByteUnprotected(0x4C3A71, 0xEB);
+
+		// Patch every mergeAnimGroups call.
+		auto AnimationDataExtended_mergeAnimGroups = &AnimationData::mergeAnimGroups;
+		genCallEnforced(0x4E646C, 0x4708D0, *reinterpret_cast<DWORD*>(&AnimationDataExtended_mergeAnimGroups));
+		genCallEnforced(0x4E6485, 0x4708D0, *reinterpret_cast<DWORD*>(&AnimationDataExtended_mergeAnimGroups));
+		genCallEnforced(0x4E6574, 0x4708D0, *reinterpret_cast<DWORD*>(&AnimationDataExtended_mergeAnimGroups));
+		genCallEnforced(0x4E6827, 0x4708D0, *reinterpret_cast<DWORD*>(&AnimationDataExtended_mergeAnimGroups));
+		genCallEnforced(0x4E68B5, 0x4708D0, *reinterpret_cast<DWORD*>(&AnimationDataExtended_mergeAnimGroups));
+		genCallEnforced(0x4E695A, 0x4708D0, *reinterpret_cast<DWORD*>(&AnimationDataExtended_mergeAnimGroups));
+		genCallEnforced(0x4E6AC5, 0x4708D0, *reinterpret_cast<DWORD*>(&AnimationDataExtended_mergeAnimGroups));
+		genCallEnforced(0x4E6B6A, 0x4708D0, *reinterpret_cast<DWORD*>(&AnimationDataExtended_mergeAnimGroups));
+		genCallEnforced(0x4E6BBF, 0x4708D0, *reinterpret_cast<DWORD*>(&AnimationDataExtended_mergeAnimGroups));
+		genCallEnforced(0x4E6BD8, 0x4708D0, *reinterpret_cast<DWORD*>(&AnimationDataExtended_mergeAnimGroups));
+		genCallEnforced(0x4E6CED, 0x4708D0, *reinterpret_cast<DWORD*>(&AnimationDataExtended_mergeAnimGroups));
 
 		// Patch every setLayerKeyframes call.
 		auto AnimationDataExtended_setLayerKeyframes = &AnimationData::setLayerKeyframes;

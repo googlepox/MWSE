@@ -25,7 +25,7 @@ namespace NI {
 		char* name; // 0x0
 		char* filename; // 0x4
 		int fileNum;
-		NI::TArray<char*> boneNames; // 0xC
+		NI::TArray<char*> objectNames; // 0xC
 		NI::TArray<Pointer<KeyframeController>> controllers; // 0x24
 		Pointer<TextKeyExtraData> textKeys;
 		unsigned int textKeyControllerIndex; // 0x40
@@ -46,6 +46,7 @@ namespace NI {
 		// Custom functions.
 		//
 
+		Pointer<KeyframeController> getController(const char* name) const;
 		void release();
 	};
 	static_assert(sizeof(Sequence) == 0xC0, "NI::Sequence failed size validation");

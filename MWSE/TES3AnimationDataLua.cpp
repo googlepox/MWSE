@@ -40,7 +40,7 @@ namespace mwse::lua {
 			usertypeDefinition["animGroupSoundGenCounts"] = sol::readonly_property(&TES3::AnimationData::getAnimGroupSoundGenCounts);
 			//usertypeDefinition["animGroupSoundGens"] = sol::readonly_property(&TES3::AnimationData::getAnimGroupSoundGens);
 			usertypeDefinition["animGroupLayerIndices"] = sol::readonly_property(&TES3::AnimationData::getAnimGroupLayerIndices);
-			usertypeDefinition["approxRootTravelDistances"] = sol::readonly_property(&TES3::AnimationData::getApproxRootTravelDistances);
+			usertypeDefinition["approxRootTravelSpeeds"] = sol::readonly_property(&TES3::AnimationData::getApproxRootTravelSpeeds);
 			usertypeDefinition["blinkMorphEndTime"] = sol::readonly_property(&TES3::AnimationData::blinkMorphEndTime);
 			usertypeDefinition["blinkMorphStartTime"] = sol::readonly_property(&TES3::AnimationData::blinkMorphStartTime);
 			usertypeDefinition["castSpeed"] = sol::property(&TES3::AnimationData::getCastSpeed, &TES3::AnimationData::setCastSpeed);
