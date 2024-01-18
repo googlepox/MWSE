@@ -718,8 +718,13 @@ namespace TES3 {
 			test al, al
 			jz $ + 0x35F			// skip sound if false
 
-			xor bl, bl				// compacted code of next block
-			cmp esi, dword ptr [0x7C86D8]
+			xor bl, bl				// rearranged code of next block
+			_emit 0x3B				// masm bug workaround. used instead of cmp esi, [0x7C86D8]
+			_emit 0x35
+			_emit 0xD8
+			_emit 0x86
+			_emit 0x7C
+			_emit 0
 		}
 	}
 	const size_t patchAnimUpdateSoundEvents_size = 0x1D;
