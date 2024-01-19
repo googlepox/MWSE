@@ -4463,29 +4463,52 @@ namespace mwse::lua {
 			animData = reference->getAttachedAnimationData();
 		}
 
+		// Handle numerical and named animation params.
+		// A special numerical group id is used within this function for named animation to simplify the logic.
+		const int namedAnimId = 0xAAAA;
+
 		int group = getOptionalParam<int>(params, "group", -1);
-		if (group < -1 || group > 149) {
-			throw std::invalid_argument("Invalid 'group' parameter provided: must be between 0 and 149.");
+		auto groupName = getOptionalParam<const char*>(params, "group");
+		if (group == -1) {
+			group = groupName ? namedAnimId : -1;
+		}
+		else if (group < 0 || group > 149) {
+			throw std::invalid_argument("Invalid 'group' parameter provided: must be between 0 and 149, or a name.");
 		}
 
-		int lowerGroup = getOptionalParam<int>(params, "lower", group);
-		if (lowerGroup < -1 || lowerGroup > 149) {
-			throw std::invalid_argument("Invalid 'lowerGroup' parameter provided: must be between 0 and 149.");
+		int lowerGroup = getOptionalParam<int>(params, "lower", -1);
+		auto lowerGroupName = getOptionalParam<const char*>(params, "lower");
+		if (lowerGroup == -1) {
+			lowerGroup = lowerGroupName ? namedAnimId : group;
+			lowerGroupName = lowerGroupName ? lowerGroupName : groupName;
+		}
+		else if (lowerGroup < 0 || lowerGroup > 149) {
+			throw std::invalid_argument("Invalid 'lower' parameter provided: must be between 0 and 149, or a name.");
 		}
 
-		int upperGroup = getOptionalParam<int>(params, "upper", lowerGroup);
-		if (upperGroup < -1 || upperGroup > 149) {
-			throw std::invalid_argument("Invalid 'upperGroup' parameter provided: must be between 0 and 149.");
+		int upperGroup = getOptionalParam<int>(params, "upper", -1);
+		auto upperGroupName = getOptionalParam<const char*>(params, "upper");
+		if (upperGroup == -1) {
+			upperGroup = upperGroupName ? namedAnimId : lowerGroup;
+			upperGroupName = upperGroupName ? upperGroupName : lowerGroupName;
+		}
+		else if (upperGroup < 0 || upperGroup > 149) {
+			throw std::invalid_argument("Invalid 'upper' parameter provided: must be between 0 and 149, or a name.");
 		}
 
-		int shieldGroup = getOptionalParam<int>(params, "shield", upperGroup);
-		if (shieldGroup < -1 || shieldGroup > 149) {
-			throw std::invalid_argument("Invalid 'shieldGroup' parameter provided: must be between 0 and 149.");
+		int leftArmGroup = getOptionalParam<int>(params, "shield", -1);
+		auto leftArmGroupName = getOptionalParam<const char*>(params, "shield");
+		if (leftArmGroup == -1) {
+			leftArmGroup = leftArmGroupName ? namedAnimId : upperGroup;
+			leftArmGroupName = leftArmGroupName ? leftArmGroupName : upperGroupName;
+		}
+		else if (leftArmGroup < 0 || leftArmGroup > 149) {
+			throw std::invalid_argument("Invalid 'shield' parameter provided: must be between 0 and 149, or a name.");
 		}
 
 		// Play anim group 0 (returns control to AI) if no groups are specified.
-		if (lowerGroup == -1 && upperGroup == -1 && shieldGroup == -1) {
-			group = lowerGroup = upperGroup = shieldGroup = int(TES3::AnimGroupID::Idle);
+		if (lowerGroup == -1 && upperGroup == -1 && leftArmGroup == -1) {
+			group = lowerGroup = upperGroup = leftArmGroup = int(TES3::AnimGroupID::Idle);
 		}
 
 		// Default to immediate start and infinite looping.
@@ -4493,19 +4516,28 @@ namespace mwse::lua {
 		int loopCount = getOptionalParam<int>(params, "loopCount", -1);
 
 		// Start animations.
-		if (lowerGroup != -1) {
+		if (lowerGroupName) {
+			animData->playNamedAnimationGroup(lowerGroupName.value(), 0, startFlag, loopCount);
+		}
+		else if (lowerGroup != -1) {
 			animData->playAnimationGroupForSection(TES3::AnimGroupID(lowerGroup), 0, startFlag, loopCount);
 		}
-		if (upperGroup != -1) {
+		if (upperGroupName) {
+			animData->playNamedAnimationGroup(upperGroupName.value(), 1, startFlag, loopCount);
+		}
+		else if (upperGroup != -1) {
 			animData->playAnimationGroupForSection(TES3::AnimGroupID(upperGroup), 1, startFlag, loopCount);
 		}
-		if (shieldGroup != -1) {
-			animData->playAnimationGroupForSection(TES3::AnimGroupID(shieldGroup), 2, startFlag, loopCount);
+		if (leftArmGroupName) {
+			animData->playNamedAnimationGroup(leftArmGroupName.value(), 2, startFlag, loopCount);
+		}
+		else if (leftArmGroup != -1) {
+			animData->playAnimationGroupForSection(TES3::AnimGroupID(leftArmGroup), 2, startFlag, loopCount);
 		}
 
 		auto mact = reference->getAttachedMobileActor();
 		if (mact) {
-			// If no overall group is specified, do not idle AI and only override specified body part groups.
+			// If no overall group is specified, do not idle AI and only override specified body sections.
 			if (group == -1) {
 				if (mact->animationController.asActor) {
 					unsigned char targetSection = 0xFF;
@@ -4515,7 +4547,7 @@ namespace mwse::lua {
 					else if (upperGroup != -1) {
 						targetSection = 1;
 					}
-					else if (shieldGroup != -1) {
+					else if (leftArmGroup != -1) {
 						targetSection = 2;
 					}
 					mact->animationController.asActor->patchedOverrideState = targetSection;
@@ -4523,7 +4555,7 @@ namespace mwse::lua {
 			}
 			else {
 				// Idle anim flag pauses all AI animation control.
-				bool idleAnim = getOptionalParam<bool>(params, "idleAnim", lowerGroup > 0 || upperGroup > 0 || shieldGroup > 0);
+				bool idleAnim = getOptionalParam<bool>(params, "idleAnim", lowerGroup > 0 || upperGroup > 0 || leftArmGroup > 0);
 				mact->setMobileActorFlag(TES3::MobileActorFlag::IdleAnim, idleAnim);
 				if (mact->animationController.asActor) {
 					mact->animationController.asActor->patchedOverrideState = 0xFF;

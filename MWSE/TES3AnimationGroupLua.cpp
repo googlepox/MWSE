@@ -54,11 +54,12 @@ namespace mwse::lua {
 			};
 
 			// Basic property binding.
-			usertypeDefinition["filename"] = sol::readonly_property(&TES3::KeyframeDefinition::filename);
-			usertypeDefinition["sequences"] = sol::readonly_property([](TES3::KeyframeDefinition& kf) { return std::ref(kf.sequences); });
 			usertypeDefinition["animationGroups"] = sol::readonly_property(&TES3::KeyframeDefinition::animationGroups);
+			usertypeDefinition["filename"] = sol::readonly_property(&TES3::KeyframeDefinition::filename);
 			usertypeDefinition["groupCount"] = sol::readonly_property(&TES3::KeyframeDefinition::groupCount);
+			usertypeDefinition["namedGroups"] = sol::readonly_property(&TES3::KeyframeDefinition::namedGroups);
 			usertypeDefinition["refCount"] = sol::readonly_property(&TES3::KeyframeDefinition::refCount);
+			usertypeDefinition["sequences"] = sol::readonly_property([](TES3::KeyframeDefinition& kf) { return std::ref(kf.sequences); });
 		}
 	}
 }

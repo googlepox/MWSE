@@ -120,7 +120,7 @@ namespace TES3 {
 		std::swap(approxRootTravelSpeeds[g1], approxRootTravelSpeeds[g2]);
 
 		// Fix up timing and sequence activation if the swap affects the currently playing animation.
-		for (int i = 0; i < 3; ++i) {
+		for (int i = 0; i < BodySectionCount; ++i) {
 			auto group = int(currentAnimGroup[i]);
 			auto sequenceGroup = &this->keyframeLayers[i].lower;
 
@@ -218,6 +218,8 @@ namespace TES3 {
 		// Finish construction of new members.
 		::new (&customLayers) decltype(customLayers);
 		::new (&customAnims) decltype(customAnims);
+		::new (&namedGroups) decltype(namedGroups);
+		::new (&temporarySwitchedGroups) decltype(temporarySwitchedGroups);
 
 		// Ensure there are 3 initial layers to match vanilla.
 		// customLayers elements are zeroed by the SequenceGroup ctor.
@@ -321,7 +323,166 @@ namespace TES3 {
 			mergeAnimGroup(iter, layerIndex);
 		}
 	}
-		
+	
+	void AnimationData::setTemporarySwitch(TargetAnimGroup& target, int bodySection) {
+		// This function switches in an animation group temporarily, which is reverted to the original when it is no longer being played.
+		// The temporary switches are checked on every playGroup.
+		// It is a compromise design which is easier than patching every animation group access and comparison.
+		TemporarySwitchedGroup* existingSwitch = nullptr;
+		auto expireSwitch = temporarySwitchedGroups.end();
+
+		for (auto t = temporarySwitchedGroups.begin(); t != temporarySwitchedGroups.end(); ++t) {
+			// Check for matching group id. There may be different animations with the same id, but only one can be active.
+			if (t->original.group->groupId == target.group->groupId) {
+				// Re-use already-active matching temporary anim group.
+				t->activeSections[bodySection] = true;
+				existingSwitch = &*t;
+			}
+			else if (t->activeSections[bodySection]) {
+				// De-activate previous temporary anim group.
+				t->activeSections[bodySection] = false;
+				// Retire it if no section is using it.
+				if (!(t->activeSections[0] || t->activeSections[1] || t->activeSections[2])) {
+					expireSwitch = t;
+				}
+			}
+		}
+		if (expireSwitch != temporarySwitchedGroups.end()) {
+			// The temporary anim group can be safely retired.
+			applyTargetGroup(expireSwitch->original);
+			temporarySwitchedGroups.erase(expireSwitch);
+		}
+
+		if (!existingSwitch) {
+			// Set up a new temporary anim group.
+			int groupId = int(target.group->groupId);
+			TemporarySwitchedGroup tsg{
+				target,
+				TargetAnimGroup{ animationGroups[groupId], animGroupLayerIndices[groupId] },
+				{ false, false, false }
+			};
+			tsg.activeSections[bodySection] = true;
+
+			temporarySwitchedGroups.emplace_back(tsg);
+			applyTargetGroup(tsg.temporary);
+		}
+		else {
+			// There is a matching group id. Check if this is setting a different anim group with the same group id.
+			if (target.group != existingSwitch->temporary.group) {
+				// Replace the anim group without regard to the other body sections. A limitation of this design.
+				existingSwitch->temporary = target;
+				applyTargetGroup(target);
+				// Set the animation for this section to idle, so that the engine can detect the transition between two anim groups with the same id.
+				currentAnimGroup[bodySection] = AnimGroupID::Idle;
+			}
+		}
+	}
+
+	void AnimationData::revertTemporarySwitches(int bodySection) {
+		// This function will flag a body section as not using a temporary anim group, then revert any switched groups not in use by any section.
+		// It is a compromise design which is easier than patching every animation group access and comparison.
+		auto expireSwitch = temporarySwitchedGroups.end();
+
+		for (auto t = temporarySwitchedGroups.begin(); t != temporarySwitchedGroups.end(); ++t) {
+			if (t->activeSections[bodySection]) {
+				// De-activate previous temporary anim group.
+				t->activeSections[bodySection] = false;
+				// Retire it if no section is using it.
+				if (!(t->activeSections[0] || t->activeSections[1] || t->activeSections[2])) {
+					expireSwitch = t;
+				}
+				break;
+			}
+		}
+		if (expireSwitch != temporarySwitchedGroups.end()) {
+			// The temporary anim group can be safely retired.
+			applyTargetGroup(expireSwitch->original);
+			temporarySwitchedGroups.erase(expireSwitch);
+		}
+	}
+
+	void AnimationData::playAnimationGroupForSection(AnimGroupID groupId, int bodySection, int startFlag, int loopCount) {
+		// Prevent out-of-bounds array access.
+		if (bodySection < 0 || bodySection > 2) {
+			return;
+		}
+
+		// This function is a replacement for the vanilla engine function.
+		// Cancel any active temporary animation for this body section.
+		revertTemporarySwitches(bodySection);
+
+		// Trigger event and original function.
+		AnimationDataVanilla::playAnimationGroupForSection(groupId, bodySection, startFlag, loopCount);
+	}
+
+	void AnimationData::playNamedAnimationGroup(std::string_view name, int bodySection, int startFlag, int loopCount) {
+		// Prevent out-of-bounds array access.
+		if (bodySection < 0 || bodySection > 2) {
+			return;
+		}
+
+		auto iter = namedGroups.find(KeyframeDefinition::toCanonicalName(name));
+		if (iter == namedGroups.end()) {
+			return;
+		}
+		auto& namedTarget = iter->second;
+
+		// Playing named animations is automatically temporary.
+		setTemporarySwitch(namedTarget, bodySection);
+
+		// Trigger event and original function.
+		AnimationDataVanilla::playAnimationGroupForSection(namedTarget.group->groupId, bodySection, startFlag, loopCount);
+	}
+
+	bool AnimationData::applyTargetGroup(const TargetAnimGroup& targetGroup) {
+		int layer = targetGroup.layer;
+
+		// Disable sequences from current active layers.
+		for (int i = 0; i < BodySectionCount; ++i) {
+			auto currentSectionLayer = currentAnimGroupLayer[i];
+			if (currentSectionLayer != -1) {
+				auto seq = customLayers[currentSectionLayer].get(i);
+				if (seq) {
+					manager->deactivateSequence(seq);
+				}
+			}
+		}
+
+		// Merge in group.
+		mergeAnimGroup(targetGroup.group, layer);
+
+		// Reset timing for any currently running anims using new data.
+		for (int i = 0; i < BodySectionCount; ++i) {
+			auto group = int(currentAnimGroup[i]);
+			if (animGroupLayerIndices[group] == layer && currentAnimGroupLayer[i] != layer) {
+				currentAnimGroupLayer[i] = layer;
+				timing[i] = animationGroups[group]->actionTimings[currentActionIndices[i]];
+			}
+		}
+
+		// Enable sequences for new active layers.
+		for (int i = 0; i < BodySectionCount; ++i) {
+			auto currentSectionLayer = currentAnimGroupLayer[i];
+			if (currentSectionLayer != -1) {
+				auto seq = customLayers[currentSectionLayer].get(i);
+				if (seq) {
+					manager->activateSequence(seq);
+				}
+			}
+		}
+
+		// Fix up movement root after modification by mergeAnimGroup.
+		TES3::Vector3 unused;
+		updateMovementDelta(timing[0], &unused, true);
+
+		return true;
+	}
+
+	bool AnimationData::hasNamedGroup(std::string_view name) {
+		auto iter = namedGroups.find(KeyframeDefinition::toCanonicalName(name));
+		return iter != namedGroups.end();
+	}
+
 	void AnimationData::onSectionInheritAnim(int bodySection) {
 		currentActionIndices[bodySection] = currentActionIndices[0];
 		currentAnimGroup[bodySection] = currentAnimGroup[0];
@@ -339,23 +500,45 @@ namespace TES3 {
 		}
 	}
 
+	bool AnimationData::getVanillaTarget(AnimGroupID groupId, TargetAnimGroup& out_target) {
+		// Find a vanilla anim group using the original priority layers.
+		for (int v = 0; v < VanillaLayerCount; ++v) {
+			auto vanillaAnim = customAnims[v];
+			if (vanillaAnim) {
+				auto vanillaGroup = vanillaAnim->animationGroups->findGroup(groupId);
+				if (vanillaGroup) {
+					out_target.group = vanillaGroup;
+					out_target.layer = v;
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	bool AnimationData::addCustomAnim(KeyframeDefinition* kfData) {
 		if (std::find(customAnims.cbegin(), customAnims.cend(), kfData) != customAnims.cend()) {
 			return false;
 		}
 
+		// Call layer setup function that will add to customAnims and customLayers.
 		int layer = customAnims.size();
 		bool isBiped = customLayers[BaseAnimLayerIndex].upper != nullptr;
 
-		// Call layer setup function that will add to customAnims and customLayers.
 		kfData->refCount++;
 		setLayerKeyframes(kfData, layer, isBiped);
+
+		// Named anims are indexed separately, using namedGroups as a lookup table.
+		for (auto& namedGroup : kfData->namedGroups) {
+			namedGroups.emplace(namedGroup.first, TargetAnimGroup{ namedGroup.second, layer });
+		}
+
 		return true;
 	}
 
-	bool AnimationData::applyCustomAnim(const char* name) {
+	bool AnimationData::applyCustomAnim(std::string_view name) {
 		auto iter = std::find_if(customAnims.begin(), customAnims.end(),
-			[name](TES3::KeyframeDefinition* anim) { return anim && std::strcmp(anim->filename, name) == 0; }
+			[&](TES3::KeyframeDefinition* anim) { return anim && name == anim->filename; }
 		);
 		if (iter == customAnims.end()) {
 			return false;
@@ -365,10 +548,12 @@ namespace TES3 {
 
 		// Disable sequences from current active layers.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto l = currentAnimGroupLayer[i];
-			if (l != -1) {
-				auto seqGrp = &customLayers[l].lower;
-				manager->deactivateSequence(seqGrp[i]);
+			auto currentSectionLayer = currentAnimGroupLayer[i];
+			if (currentSectionLayer != -1) {
+				auto seq = customLayers[currentSectionLayer].get(i);
+				if (seq) {
+					manager->deactivateSequence(seq);
+				}
 			}
 		}
 
@@ -386,10 +571,12 @@ namespace TES3 {
 
 		// Enable sequences for new active layers.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto l = currentAnimGroupLayer[i];
-			if (l != -1) {
-				auto seqGrp = &customLayers[l].lower;
-				manager->activateSequence(seqGrp[i]);
+			auto currentSectionLayer = currentAnimGroupLayer[i];
+			if (currentSectionLayer != -1) {
+				auto seq = customLayers[currentSectionLayer].get(i);
+				if (seq) {
+					manager->activateSequence(seq);
+				}
 			}
 		}
 
@@ -400,9 +587,9 @@ namespace TES3 {
 		return true;
 	}
 
-	bool AnimationData::removeCustomAnim(const char* name) {
+	bool AnimationData::removeCustomAnim(std::string_view name) {
 		auto iter = std::find_if(customAnims.begin(), customAnims.end(),
-			[name](TES3::KeyframeDefinition* anim) { return anim && std::strcmp(anim->filename, name) == 0; }
+			[&](TES3::KeyframeDefinition* anim) { return anim && name == anim->filename; }
 		);
 		if (iter == customAnims.end()) {
 			return false;
@@ -412,12 +599,33 @@ namespace TES3 {
 
 		// Disable sequences from current active layers.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto l = currentAnimGroupLayer[i];
-			if (l != -1) {
-				auto seqGrp = &customLayers[l].lower;
-				manager->deactivateSequence(seqGrp[i]);
+			auto currentSectionLayer = currentAnimGroupLayer[i];
+			if (currentSectionLayer != -1) {
+				auto seq = customLayers[currentSectionLayer].get(i);
+				if (seq) {
+					manager->deactivateSequence(seq);
+				}
 			}
 		}
+
+		// Remove any switched anim groups that use this source.
+		for (auto& tsg : temporarySwitchedGroups) {
+			if (tsg.original.layer == layer) {
+				// Set the original anim to a vanilla source.
+				getVanillaTarget(tsg.original.group->groupId, tsg.original);
+			}
+			if (tsg.temporary.layer == layer) {
+				// Switch back to the original.
+				applyTargetGroup(tsg.original);
+			}
+		}
+		auto iterErase = std::remove_if(
+			temporarySwitchedGroups.begin(), temporarySwitchedGroups.end(),
+			[&](const auto& tsg) {
+				return tsg.temporary.layer == layer;
+			}
+		);
+		temporarySwitchedGroups.erase(iterErase, temporarySwitchedGroups.end());
 
 		// Merge in vanilla groups to replace animgroups from this anim.
 		for (int groupId = 0; groupId <= int(AnimGroupID::Last); ++groupId) {
@@ -446,10 +654,12 @@ namespace TES3 {
 
 		// Enable sequences for new active layers.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto l = currentAnimGroupLayer[i];
-			if (l != -1) {
-				auto seqGrp = &customLayers[l].lower;
-				manager->activateSequence(seqGrp[i]);
+			auto currentSectionLayer = currentAnimGroupLayer[i];
+			if (currentSectionLayer != -1) {
+				auto seq = customLayers[currentSectionLayer].get(i);
+				if (seq) {
+					manager->activateSequence(seq);
+				}
 			}
 		}
 
@@ -457,16 +667,23 @@ namespace TES3 {
 		TES3::Vector3 unused;
 		updateMovementDelta(timing[0], &unused, true);
 
+		// Clear named groups from available names.
+		for (auto& namedGroup : kfData->namedGroups) {
+			namedGroups.erase(namedGroup.first);
+		}
+
 		return true;
 	}
 
 	void AnimationData::resetCustomAnims() {
 		// Disable sequences from current active layers.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto l = currentAnimGroupLayer[i];
-			if (l != -1) {
-				auto seqGrp = &customLayers[l].lower;
-				manager->deactivateSequence(seqGrp[i]);
+			auto currentSectionLayer = currentAnimGroupLayer[i];
+			if (currentSectionLayer != -1) {
+				auto seq = customLayers[currentSectionLayer].get(i);
+				if (seq) {
+					manager->deactivateSequence(seq);
+				}
 			}
 		}
 
@@ -488,10 +705,12 @@ namespace TES3 {
 
 		// Enable sequences for new active layers.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto l = currentAnimGroupLayer[i];
-			if (l != -1) {
-				auto seqGrp = &customLayers[l].lower;
-				manager->activateSequence(seqGrp[i]);
+			auto currentSectionLayer = currentAnimGroupLayer[i];
+			if (currentSectionLayer != -1) {
+				auto seq = customLayers[currentSectionLayer].get(i);
+				if (seq) {
+					manager->activateSequence(seq);
+				}
 			}
 		}
 
@@ -730,6 +949,17 @@ namespace TES3 {
 	const size_t patchAnimUpdateSoundEvents_size = 0x1D;
 
 	//
+	// Patch: Parser call in vanilla KeyframeDefinition::ctor
+	//
+	
+	__declspec(naked) void patchKeyframeDefinitionCallParser() {
+		__asm {
+			push ebx		// push KeyframeDefinition
+		}
+	}
+	const size_t patchKeyframeDefinitionCallParser_size = 1;
+
+	//
 	// Patch: Allow changing cast animation speed. Custom speed is read and applied on initial cast.
 	//
 
@@ -776,6 +1006,7 @@ namespace TES3 {
 		using mwse::genCallEnforced;
 		using mwse::genCallUnprotected;
 		using mwse::genNOPUnprotected;
+		using mwse::writeByteUnprotected;
 		using mwse::writeDoubleWordUnprotected;
 		using mwse::writePatchCodeUnprotected;
 
@@ -799,6 +1030,13 @@ namespace TES3 {
 		genCallEnforced(0x4E6E03, 0x46B830, *reinterpret_cast<DWORD*>(&AnimationDataExtended_dtor));
 		genCallEnforced(0x4E893D, 0x46B830, *reinterpret_cast<DWORD*>(&AnimationDataExtended_dtor));
 
+		// Override KeyframeDefinition creation with MWSE extended struct.
+		auto KeyframeDefinitionExtended_ctor = &KeyframeDefinition::ctor;
+		writeByteUnprotected(0x4EE24F + 1, sizeof(KeyframeDefinition));
+		genCallEnforced(0x4EE26D, 0x4EDBF0, *reinterpret_cast<DWORD*>(&KeyframeDefinitionExtended_ctor));
+		// Override parser call in KeyframeDefinition ctor.
+		writePatchCodeUnprotected(0x4EDC87, reinterpret_cast<BYTE*>(&patchKeyframeDefinitionCallParser), patchKeyframeDefinitionCallParser_size);
+
 		// Patch: Allow changing cast animation speed. Custom speed is read and applied on initial cast.
 		writePatchCodeUnprotected(0x46CAC0, reinterpret_cast<BYTE*>(&patchApplyAnimationSpeed), patchApplyAnimationSpeed_size);
 		genCallUnprotected(0x541B81, reinterpret_cast<DWORD>(&setAnimSpeedOnCast), 0xA);
@@ -806,7 +1044,7 @@ namespace TES3 {
 		// Replace text key to animation group parser.
 		genCallEnforced(0x4EDC8A, 0x4C30F0, reinterpret_cast<DWORD>(&KeyframeDefinition::parseSeqTextKeysToAnimGroups));
 		// Disable "Animation group note problem" warning triggered by testing custom notes.
-		mwse::writeByteUnprotected(0x4C3A71, 0xEB);
+		writeByteUnprotected(0x4C3A71, 0xEB);
 
 		// Patch every mergeAnimGroups call.
 		auto AnimationDataExtended_mergeAnimGroups = &AnimationData::mergeAnimGroups;

@@ -89,6 +89,29 @@ namespace TES3 {
 	}
 
 	/// <summary>
+	/// KeyframeDefinition
+	/// </summary>
+
+	const auto TES3_KeyframeDefinitionVanilla_ctor = reinterpret_cast<KeyframeDefinitionVanilla * (__thiscall*)(KeyframeDefinitionVanilla*, const char*, const char*)>(0x4EDBF0);
+	KeyframeDefinition* KeyframeDefinition::ctor(const char* nifPath, const char* name) {
+		// Construct new members first, because they are used during parsing in the base constructor.
+		::new (&namedGroups) decltype(namedGroups);
+
+		// Call base class ctor.
+		TES3_KeyframeDefinitionVanilla_ctor(this, nifPath, name);
+		return this;
+	}
+
+	const auto TES3_KeyframeDefinitionVanilla_dtor = reinterpret_cast<void (__thiscall*)(KeyframeDefinitionVanilla*)>(0x4EDCD0);
+	void KeyframeDefinition::dtor() {
+		// Clean up new members.
+		namedGroups.~decltype(namedGroups)();
+
+		// Call base class dtor.
+		TES3_KeyframeDefinitionVanilla_dtor(this);
+	}
+
+	/// <summary>
 	/// Animation text key parser.
 	/// </summary>
 
@@ -120,6 +143,12 @@ namespace TES3 {
 		return _strnicmp(text.data(), startsWith, std::strlen(startsWith)) == 0;
 	}
 
+	std::string textAsLowercase(const std::string_view& text) {
+		std::string lowered{ text };
+		std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) { return std::tolower(c); });
+		return lowered;
+	}
+
 	struct TextKeyParser {
 		using string = std::string;
 		using string_view = std::string_view;
@@ -134,6 +163,7 @@ namespace TES3 {
 			};
 		};
 
+		KeyframeDefinition* kfData;
 		AnimationGroup* firstGroup;
 		AnimationGroup* lastGroup;
 		std::vector<AnimationGroup*> activeAnimGroups;
@@ -142,14 +172,14 @@ namespace TES3 {
 
 		static inline std::unordered_map<string, AnimGroupID> mapAnimationNames;
 
-		TextKeyParser() : firstGroup(nullptr), lastGroup(nullptr), matchedCreature(nullptr) {}
+		TextKeyParser(KeyframeDefinition* _kfData) : kfData(_kfData), firstGroup(nullptr), lastGroup(nullptr), matchedCreature(nullptr) {}
 
-		int parse(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups);
+		int parse(NI::Sequence* sequence, const char* meshPath);
 		void parseNoteAction(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue);
 		void parseNoteSound(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue);
 		void parseNoteLuaEvent(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue);
 		float measureRootMovementSpeedOverLoop(NI::TimeController* rootController, AnimationGroup* animGroup);
-		void testResult(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups);
+		void testResult(NI::Sequence* sequence, const char* meshPath);
 		static void preCacheMappings();
 	};
 
@@ -159,7 +189,7 @@ namespace TES3 {
 	const auto TES3_animGroupActionIds = reinterpret_cast<int*>(0x78B300);
 	const auto TES3_animActionTextByActionClass = reinterpret_cast<const char**>(0x78ABC8);
 
-	int TextKeyParser::parse(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups) {
+	int TextKeyParser::parse(NI::Sequence* sequence, const char* meshPath) {
 		// Pre-convert animation string tables.
 		preCacheMappings();
 
@@ -228,7 +258,7 @@ namespace TES3 {
 			// Remove expiring groups after all other notes in the key have been applied.
 			auto iterErase = std::remove_if(
 				activeAnimGroups.begin(), activeAnimGroups.end(),
-				[&](AnimationGroup* g) {
+				[&](const AnimationGroup* g) {
 					return std::find(expireGroups.begin(), expireGroups.end(), g) != expireGroups.end();
 				}
 			);
@@ -242,7 +272,7 @@ namespace TES3 {
 			rootController = sequence->getController("Root Bone");
 		}
 
-		int groupCount = 0;
+		int groupCount = kfData->namedGroups.size();
 		for (auto g = firstGroup; g; g = g->nextGroup) {
 			++groupCount;
 
@@ -257,25 +287,53 @@ namespace TES3 {
 		}
 
 		// Write to output pointer before finishing.
-		*pAnimationGroups = firstGroup;
+		kfData->animationGroups = firstGroup;
 		return groupCount;
 	}
 
 	void TextKeyParser::parseNoteAction(const NI::TextKey& key, std::string_view noteKey, std::string_view noteValue) {
-		// Check for animation id.
-		std::string lowercaseName{ noteKey };
-		std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), [](unsigned char c) { return std::tolower(c); });
-		auto iterAnimName = mapAnimationNames.find(lowercaseName);
-		if (iterAnimName == mapAnimationNames.end()) {
-			mwse::log::getLog() << "[AnimParser] Unknown animation id '" << noteKey << "'" << std::endl;
-			return;
-		}
-
-		auto matchedGroupId = iterAnimName->second;
-		auto actionClass = AnimationGroup::getActionClass(matchedGroupId);
+		// Check for animation name. Vanilla animations are indexed by an id, while all others are by string.
+		string lowercaseName = textAsLowercase(noteKey);
+		bool isNamedAnim = false;
+		AnimGroupID matchedGroupId = AnimGroupID::Idle9;
 		AnimationGroup* newGroup = nullptr;
 
+		auto iterAnimName = mapAnimationNames.find(lowercaseName);
+		if (iterAnimName != mapAnimationNames.end()) {
+			// Vanilla name.
+			matchedGroupId = iterAnimName->second;
+		}
+		else {
+			// Non-vanilla, treat as named animation.
+			isNamedAnim = true;
+			auto itt = kfData->namedGroups.find(lowercaseName);
+			mwse::log::getLog() << "[AnimParser] Named animation: '" << noteKey << "'" << std::endl;
+
+			// A behave-as-group-id is required to get the correct action class.
+			if (itt != kfData->namedGroups.end()) {
+				matchedGroupId = itt->second->groupId;
+			}
+			else if (textCIStartsWith(noteValue, "AsGroup ")) {
+				// Check for behave-as-group assignment key. Named anims without AsGroup default to Idle9, set above.
+				string asGroup = textAsLowercase(noteValue.substr(8));
+				iterAnimName = mapAnimationNames.find(asGroup);
+				matchedGroupId = (iterAnimName != mapAnimationNames.end()) ? iterAnimName->second : AnimGroupID::Idle9;
+				mwse::log::getLog() << "[AnimParser] '" << lowercaseName << "' AsGroup '" << asGroup << "' = " << int(matchedGroupId) << std::endl;
+				{
+					// Clear all active anims.
+					activeAnimGroups.clear();
+
+					// Construct new anim group.
+					newGroup = mwse::tes3::_new<AnimationGroup>();
+					newGroup->ctor(int(matchedGroupId));
+					activeAnimGroups.emplace_back(newGroup);
+				}
+			}
+		}
+
+		auto actionClass = AnimationGroup::getActionClass(matchedGroupId);
 		auto iterActionIndex = &TES3_animGroupActionIds[39 * int(matchedGroupId)];
+
 		for (int i = 0; i < 39 && *iterActionIndex != -1; ++i, ++iterActionIndex) {
 			auto actionIndex = *iterActionIndex;
 			auto actionText = TES3_animActionTextByActionClass[8 * actionIndex + int(actionClass)];
@@ -283,6 +341,7 @@ namespace TES3 {
 			// Note this is a prefix match. e.g. actionText could be "Stop."
 			if (textCIStartsWith(noteValue, actionText)) {
 				// Find if the animation group exists already. Check active anim groups first, then all groups.
+				// Activate group if not already active.
 				AnimationGroup* animGroup = nullptr;
 				auto iterMatchedGroup = std::find_if(
 					activeAnimGroups.begin(), activeAnimGroups.end(),
@@ -291,11 +350,18 @@ namespace TES3 {
 				if (iterMatchedGroup != activeAnimGroups.end()) {
 					animGroup = *iterMatchedGroup;
 				}
+				else if (isNamedAnim) {
+					auto itt = kfData->namedGroups.find(lowercaseName);
+					if (itt != kfData->namedGroups.end()) {
+						animGroup = itt->second;
+						activeAnimGroups.emplace_back(animGroup);
+					}
+				}
 				else {
 					for (auto g = firstGroup; g; g = g->nextGroup) {
 						if (g->groupId == matchedGroupId) {
-							activeAnimGroups.emplace_back(g);
 							animGroup = g;
+							activeAnimGroups.emplace_back(animGroup);
 							break;
 						}
 					}
@@ -304,12 +370,13 @@ namespace TES3 {
 				if (animGroup == nullptr) {
 					// Sound notes can apply to multiple overlapping anims, but only for action classes 0-2.
 					// On new anim group, clear all active non-overlapping action class anims.
-					auto iterErase = std::remove_if(activeAnimGroups.begin(), activeAnimGroups.end(),
-						[&](AnimationGroup* g) { return AnimationGroup::getActionClass(g->groupId) > AnimGroupActionClass::CreatureAttack; }
+					auto iterErase = std::remove_if(
+						activeAnimGroups.begin(), activeAnimGroups.end(),
+						[&](const AnimationGroup* g) {
+							return AnimationGroup::getActionClass(g->groupId) > AnimGroupActionClass::CreatureAttack;
+						}
 					);
-					if (iterErase != activeAnimGroups.end()) {
-						activeAnimGroups.erase(iterErase, activeAnimGroups.end());
-					}
+					activeAnimGroups.erase(iterErase, activeAnimGroups.end());
 
 					// Construct new anim group.
 					newGroup = mwse::tes3::_new<AnimationGroup>();
@@ -356,14 +423,19 @@ namespace TES3 {
 		}
 
 		if (newGroup) {
-			// Append to anim group chain.
-			if (lastGroup) {
-				lastGroup->nextGroup = newGroup;
+			if (isNamedAnim) {
+				kfData->namedGroups[lowercaseName] = newGroup;
 			}
 			else {
-				firstGroup = newGroup;
+				// Append to anim group chain.
+				if (lastGroup) {
+					lastGroup->nextGroup = newGroup;
+				}
+				else {
+					firstGroup = newGroup;
+				}
+				lastGroup = newGroup;
 			}
-			lastGroup = newGroup;
 		}
 	}
 
@@ -489,18 +561,18 @@ namespace TES3 {
 	}
 
 	const auto TES3_parseSeqTextKeysToAnimGroups = reinterpret_cast<int(__cdecl*)(NI::Sequence*, const char*, AnimationGroup**)>(0x4C30F0);
-	void TextKeyParser::testResult(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups) {
+	void TextKeyParser::testResult(NI::Sequence* sequence, const char* meshPath) {
 		// Compare to vanilla. Note that the vanilla parser will modify the text keys in-place.
 		AnimationGroup* standardParseGroups = nullptr;
 		int standardParseCount = TES3_parseSeqTextKeysToAnimGroups(sequence, meshPath, &standardParseGroups);
 
 		int newParseCount = 0;
-		for (const AnimationGroup* agNew = *pAnimationGroups; agNew; agNew = agNew->nextGroup, ++newParseCount) {}
+		for (const AnimationGroup* agNew = kfData->animationGroups; agNew; agNew = agNew->nextGroup, ++newParseCount) {}
 		mwse::log::getLog() << "[AnimParser] Testing anim=" << meshPath << std::endl;
 		mwse::log::getLog() << "[AnimParser] Group count std=" << standardParseCount << " new=" << newParseCount << std::endl;
 
 		const AnimationGroup* agStd = standardParseGroups;
-		for (const AnimationGroup* agNew = *pAnimationGroups; agNew && agStd; agNew = agNew->nextGroup, agStd = agStd->nextGroup) {
+		for (const AnimationGroup* agNew = kfData->animationGroups; agNew && agStd; agNew = agNew->nextGroup, agStd = agStd->nextGroup) {
 			mwse::log::getLog() << "[AnimParser] Checking group=" << TES3_animGroupNames[int(agNew->groupId)] << std::endl;
 			if (agNew->groupId != agStd->groupId) {
 				mwse::log::getLog() << "[AnimParser] TEST FAIL groupId std=" << TES3_animGroupNames[int(agStd->groupId)] << " new=" << TES3_animGroupNames[int(agNew->groupId)] << std::endl;
@@ -549,18 +621,22 @@ namespace TES3 {
 		}
 	}
 
-	int KeyframeDefinition::parseSeqTextKeysToAnimGroups(NI::Sequence* sequence, const char* meshPath, AnimationGroup** pAnimationGroups) {
-		*pAnimationGroups = nullptr;
+	std::string KeyframeDefinition::toCanonicalName(std::string_view name) {
+		return textAsLowercase(name);
+	}
+
+	int __cdecl KeyframeDefinition::parseSeqTextKeysToAnimGroups(NI::Sequence* sequence, const char* meshPath, KeyframeDefinition* kfData) {
+		kfData->animationGroups = nullptr;
 		if (!sequence || !sequence->textKeys) {
 			return 0;
 		}
 
 		// Call replacement parser.
-		TextKeyParser parser;
-		auto groupCount = parser.parse(sequence, meshPath, pAnimationGroups);
+		TextKeyParser parser(kfData);
+		auto groupCount = parser.parse(sequence, meshPath);
 
 		// Test against vanilla function.
-		parser.testResult(sequence, meshPath, pAnimationGroups);
+		parser.testResult(sequence, meshPath);
 
 		return groupCount;
 	}

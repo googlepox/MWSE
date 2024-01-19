@@ -109,8 +109,21 @@ namespace TES3 {
 	static_assert(sizeof(AnimationDataVanilla) == 0x7E4, "TES3::AnimationDataVanilla failed size validation");
 
 	struct AnimationData : AnimationDataVanilla {
+		struct TargetAnimGroup {
+			AnimationGroup* group;
+			int layer;
+		};
+		struct TemporarySwitchedGroup {
+			TargetAnimGroup temporary;
+			TargetAnimGroup original;
+			std::array<bool, 3> activeSections;
+		};
+
+		// These members need to be explicitly constructed in ctor().
 		std::vector<SequenceGroup> customLayers;
 		std::vector<KeyframeDefinition*> customAnims;
+		std::unordered_map<std::string_view, TargetAnimGroup> namedGroups;
+		std::vector<TemporarySwitchedGroup> temporarySwitchedGroups;
 
 		AnimationData() = delete;
 		~AnimationData() = delete;
@@ -122,19 +135,27 @@ namespace TES3 {
 		AnimationData* ctor();
 		void dtor();
 
+		void mergeAnimGroups(AnimationGroup* animGroup, int layerIndex);
+		void playAnimationGroupForSection(AnimGroupID groupId, int bodySection, int startFlag = 0, int loopCount = -1);
+		void playNamedAnimationGroup(std::string_view name, int bodySection, int startFlag = 0, int loopCount = -1);
 		bool setLayerKeyframes(KeyframeDefinition* kfData, int layerIndex, bool isBiped);
 
 		//
 		// Custom functions.
 		//
 
+		bool applyTargetGroup(const TargetAnimGroup& targetGroup);
+		bool getVanillaTarget(AnimGroupID groupId, TargetAnimGroup& out_target);
+		bool hasNamedGroup(std::string_view name);
 		void mergeAnimGroup(AnimationGroup* animGroup, int layerIndex);
-		void mergeAnimGroups(AnimationGroup* animGroup, int layerIndex);
 		void onSectionInheritAnim(int bodySection);
 
+		void revertTemporarySwitches(int bodySection);
+		void setTemporarySwitch(TargetAnimGroup& target, int bodySection);
+
 		bool addCustomAnim(KeyframeDefinition* kfData);
-		bool applyCustomAnim(const char* name);
-		bool removeCustomAnim(const char* name);
+		bool applyCustomAnim(std::string_view name);
+		bool removeCustomAnim(std::string_view name);
 		void resetCustomAnims();
 
 		std::reference_wrapper<decltype(customLayers)> getKeyframeLayers();
