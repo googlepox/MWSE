@@ -915,6 +915,15 @@ namespace TES3 {
 		return calculateJumpVelocity(direction);
 	}
 
+	const auto TES3_MobileActor_aiTurnWhileGreeting = reinterpret_cast<bool(__thiscall*)(MobileActor*, Vector3*, float)>(0x5268F0);
+	bool MobileActor::aiTurnWhileGreeting(Vector3* lookAt, float minimumFacingDifferenceToStartTurning) {
+		// Prevent turning when playAnimation idleAnim is true.
+		if (getMobileActorFlag(TES3::MobileActorFlag::IdleAnim)) {
+			return false;
+		}
+		return TES3_MobileActor_aiTurnWhileGreeting(this, lookAt, minimumFacingDifferenceToStartTurning);
+	}
+
 	const auto TES3_MobileActor_calcDerivedStats = reinterpret_cast<void(__thiscall*)(const MobileActor*, Statistic*)>(0x527BC0);
 	void MobileActor::updateDerivedStatistics(Statistic * baseStatistic) {
 		TES3_MobileActor_calcDerivedStats(this, baseStatistic);

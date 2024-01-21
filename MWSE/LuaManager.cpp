@@ -4166,10 +4166,33 @@ namespace mwse::lua {
 		}
 	}
 
-	// Call our custom function when updating animation playback.
-	void __fastcall ActorAnimController_selectMovementAnimAndUpdate(TES3::ActorAnimationController* animController, DWORD _UNUSED_, float deltaTime, bool flag) {
-		animController->selectMovementAnimAndUpdate(deltaTime, flag);
+	//
+	// Patch: Prevent actor changing facing when in idleAnim state.
+	//
+
+	const auto TES3_CombatSession_faceActorWithConditions = reinterpret_cast<int(__thiscall*)(TES3::CombatSession*, TES3::MobileActor*)>(0x549C70);
+	int __fastcall onFaceActorWithConditions(TES3::CombatSession* session, DWORD _EDX_, TES3::MobileActor* mact) {
+		if (mact->getMobileActorFlag(TES3::MobileActorFlag::IdleAnim)) {
+			return 0;
+		}
+		return TES3_CombatSession_faceActorWithConditions(session, mact);
 	}
+
+	__declspec(naked) void patchAIMovementFacing() {
+		__asm {
+			test dword ptr [esi + 0x10], 0x10000000		// mact.actorFlags & TES3::MobileActorFlag::IdleAnim
+			jnz $ + 0x158			// If set, jump to function exit which returns 0
+
+			xor eax, eax			// Size-reduced original code
+			xor edx, edx
+			mov [esp + 0x8], edx
+			mov [esp + 0xC], edx
+			mov [esp + 0x10], edx
+			mov al, [esp + 0x2C]
+			test al, al
+		}
+	}
+	const size_t patchAIMovementFacing_size = 0x23;
 
 	//
 	// Patch: calcMoveSpeed event for creatures.
@@ -5517,9 +5540,6 @@ namespace mwse::lua {
 		// Patch reading correct light culling radius from non-light entities during light updates.
 		writePatchCodeUnprotected(0x485DAD, (BYTE*)&patchGetEntityLightRadius, patchGetEntityLightRadius_size);
 
-		// Allow hand-to-hand animation speed to be changed.
-		writeByteUnprotected(0x46CAD7, 0x89);
-
 		// Make soul gem data writable.
 		DWORD OldProtect;
 		VirtualProtect((DWORD*)0x791C98, 6 * sizeof(TES3::SoulGemData), PAGE_READWRITE, &OldProtect);
@@ -6006,16 +6026,36 @@ namespace mwse::lua {
 		genCallEnforced(0x745BB3, 0x470AE0, *reinterpret_cast<DWORD*>(&AnimationData_playAnimationGroupForSection));
 
 		// Modify actor animation controller to allow blocking animation changes.
+		auto ActorAnimController_selectMovementAnimAndUpdate = &TES3::ActorAnimationController::selectMovementAnimAndUpdate;
 		writePatchCodeUnprotected(0x53DAB5, (BYTE*)&patchActorAnimInit, patchActorAnimInit_size);
 		genCallUnprotected(0x5428A3, reinterpret_cast<DWORD>(&CheckTogglePOV), 6);
-		genCallEnforced(0x53E135, 0x540A90, reinterpret_cast<DWORD>(&ActorAnimController_selectMovementAnimAndUpdate));
+		genCallEnforced(0x53E135, 0x540A90, *reinterpret_cast<DWORD*>(&ActorAnimController_selectMovementAnimAndUpdate));
 
 		// Make mobile IdleAnim flag reset on Stop key, instead of when loopCount reaches zero.
 		genJumpEnforced(0x46DA0D, 0x46E64E, 0x46E49E);
 		genJumpUnprotected(0x46E498, 0x46E64E);
 
+		// Disable turning on hello if the IdleAnim flag is set.
+		auto MobileActor_aiTurnWhileGreeting = &TES3::MobileActor::aiTurnWhileGreeting;
+		genCallEnforced(0x52EC26, 0x5268F0, *reinterpret_cast<DWORD*>(&MobileActor_aiTurnWhileGreeting));
+		// Disable instantaneous turning in combat if the IdleAnim flag is set.
+		genCallEnforced(0x559317, 0x549C70, reinterpret_cast<DWORD>(onFaceActorWithConditions));
+		genCallEnforced(0x559340, 0x549C70, reinterpret_cast<DWORD>(onFaceActorWithConditions));
+		genCallEnforced(0x559391, 0x549C70, reinterpret_cast<DWORD>(onFaceActorWithConditions));
+		genCallEnforced(0x5593D6, 0x549C70, reinterpret_cast<DWORD>(onFaceActorWithConditions));
+		genCallEnforced(0x559427, 0x549C70, reinterpret_cast<DWORD>(onFaceActorWithConditions));
+		genCallEnforced(0x559480, 0x549C70, reinterpret_cast<DWORD>(onFaceActorWithConditions));
+		genCallEnforced(0x5594D9, 0x549C70, reinterpret_cast<DWORD>(onFaceActorWithConditions));
+		genCallEnforced(0x559532, 0x549C70, reinterpret_cast<DWORD>(onFaceActorWithConditions));
+		genCallEnforced(0x55958B, 0x549C70, reinterpret_cast<DWORD>(onFaceActorWithConditions));
+		// Disable navigational turning if the IdleAnim flag is set.
+		writePatchCodeUnprotected(0x52670E, (BYTE*)&patchAIMovementFacing, patchAIMovementFacing_size);
+
 		// Extended animation system patches.
 		TES3::AnimationData::patch();
+
+		// Patch: Allow hand-to-hand animation speed to be changed.
+		writeByteUnprotected(0x46CAD7, 0x89);
 
 		// Event: Power Recharged
 		overrideVirtualTableEnforced(0x74AC54, offsetof(PowersHashMap::VirtualTable, deleteKeyValuePair), 0x4F1C50, reinterpret_cast<DWORD>(OnDeletePowerHashMapKVP));
