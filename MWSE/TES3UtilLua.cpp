@@ -4420,7 +4420,7 @@ namespace mwse::lua {
 
 		if (animFile) {
 			kfData = meshData->loadKeyframes(animFile, animFile);
-			if (!kfData->groupCount) {
+			if (kfData == nullptr || kfData->groupCount == 0) {
 				throw std::logic_error("Animation file failed to load.");
 			}
 		}
@@ -4457,10 +4457,19 @@ namespace mwse::lua {
 		}
 
 		// Allow loading an animation temporarily.
-		const char* modelFile = getOptionalParam<const char*>(params, "mesh", nullptr);
-		if (modelFile != nullptr) {
-			reference->setModelPath(modelFile, true);
-			animData = reference->getAttachedAnimationData();
+		const char* animFile = getOptionalParam<const char*>(params, "mesh", nullptr);
+		if (animFile != nullptr) {
+			auto meshData = TES3::DataHandler::get()->nonDynamicData->meshData;
+			auto kfData = meshData->loadKeyframes(animFile, animFile);
+			if (kfData == nullptr || kfData->groupCount == 0) {
+				throw std::logic_error("Animation file failed to load.");
+			}
+
+			// Add animation, which may exist already.
+			animData->addCustomAnim(kfData);
+			// Make actor use this animation.
+			animData->applyCustomAnim(kfData->filename);
+			meshData->releaseKeyframes(kfData);
 		}
 
 		// Handle numerical and named animation params.
