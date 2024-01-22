@@ -97,6 +97,33 @@ namespace TES3 {
 		playAnimationGroupForSection(animationGroup, 2, startFlag, loopCount);
 	}
 
+	void AnimationDataVanilla::cancelAnimationLoop(bool jumpToLoopEnd) {
+		// Cancel looping.
+		for (int i = 0; i < BodySectionCount; ++i) {
+			if (currentAnimGroup[i] != TES3::AnimGroupID::Idle) {
+				loopCounts[i] = 0;
+			}
+		}
+
+		if (jumpToLoopEnd) {
+			// Advance the lower section animation directly to the end of the loop.
+			auto lowerGroup = currentAnimGroup[0];
+			if (AnimationGroup::getActionClass(lowerGroup) == AnimGroupActionClass::Looping) {
+				const int Action_Looping_LoopEnd = 3;
+				auto loopEndTiming = animationGroups[int(lowerGroup)]->actionTimings[Action_Looping_LoopEnd];
+
+				// Only move timing forward. Apply to all sections with the same animation as the lower section.
+				if (timing[0] < loopEndTiming) {
+					for (int i = 0; i < BodySectionCount; ++i) {
+						if (currentAnimGroup[i] == lowerGroup) {
+							timing[i] = loopEndTiming;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	bool AnimationDataVanilla::setOverrideLayerKeyframes(KeyframeDefinition* kfData) {
 		constexpr int specialLayerIndex = 0;
 		bool success = setLayerKeyframes(kfData, specialLayerIndex, true);

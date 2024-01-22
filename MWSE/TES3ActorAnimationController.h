@@ -84,16 +84,17 @@ namespace TES3 {
 		void startCastAnimation();
 		void startAttackAnimation(float swing);
 
+		void selectDeathAnimation();
+		void selectMovementAnimAndUpdate(float deltaTime, bool flag);
+
 		//
 		// Custom functions.
 		//
 
-		// Fixes any transparency values.
-		void updateOpacity();
+		void updateOpacity();	// Fixes any transparency values.
 
 		float getWeaponAnimSpeed() const;
 		void setWeaponAnimSpeed(float speed);
-		void selectMovementAnimAndUpdate(float deltaTime, bool flag);
 	};
 	static_assert(sizeof(ActorAnimationController) == 0xD4, "TES3::ActorAnimationController failed size validation");
 }

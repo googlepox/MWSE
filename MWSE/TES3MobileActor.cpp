@@ -453,6 +453,13 @@ namespace TES3 {
 			}
 		}
 
+		// Patch: Smoothly end idleAnim animations that prevent AI control. They finish playing before transitioning to combat.
+		if (getFlagIdleAnim()) {
+			if (animationController.asActor && animationController.asActor->animationData) {
+				animationController.asActor->animationData->cancelAnimationLoop(true);
+			}
+		}
+
 		// Call original function.
 		TES3_MobileActor_startCombat(this, target);
 

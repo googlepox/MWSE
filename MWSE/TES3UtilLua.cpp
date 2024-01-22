@@ -4584,15 +4584,7 @@ namespace mwse::lua {
 			return;
 		}
 
-		if (animData->currentAnimGroup[0] != TES3::AnimGroupID::Idle) {
-			animData->loopCounts[0] = 0;
-		}
-		if (animData->currentAnimGroup[1] != TES3::AnimGroupID::Idle) {
-			animData->loopCounts[1] = 0;
-		}
-		if (animData->currentAnimGroup[2] != TES3::AnimGroupID::Idle) {
-			animData->loopCounts[2] = 0;
-		}
+		animData->cancelAnimationLoop(false);
 	}
 
 	void skipAnimationFrame(sol::table params) {

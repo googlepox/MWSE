@@ -85,6 +85,7 @@ namespace TES3 {
 		Reference* getReference() const;
 
 		void playAnimationGroup(AnimGroupID animationGroup, int startFlag = 0, int loopCount = -1);
+		void cancelAnimationLoop(bool jumpToLoopEnd);
 		bool setOverrideLayerKeyframes(KeyframeDefinition* animData);
 		bool hasOverrideAnimations() const;
 		void swapAnimationGroups(AnimGroupID animationGroup1, AnimGroupID animationGroup2);

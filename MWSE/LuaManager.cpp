@@ -6035,6 +6035,16 @@ namespace mwse::lua {
 		genJumpEnforced(0x46DA0D, 0x46E64E, 0x46E49E);
 		genJumpUnprotected(0x46E498, 0x46E64E);
 
+		// Cancel IdleAnim flag on death.
+		auto ActorAnimController_selectDeathAnimation = &TES3::ActorAnimationController::selectDeathAnimation;
+		genCallEnforced(0x507EFB, 0x53F120, *reinterpret_cast<DWORD*>(&ActorAnimController_selectDeathAnimation));
+		genCallEnforced(0x5082A7, 0x53F120, *reinterpret_cast<DWORD*>(&ActorAnimController_selectDeathAnimation));
+		genCallEnforced(0x5083D4, 0x53F120, *reinterpret_cast<DWORD*>(&ActorAnimController_selectDeathAnimation));
+		genCallEnforced(0x524205, 0x53F120, *reinterpret_cast<DWORD*>(&ActorAnimController_selectDeathAnimation));
+		genCallEnforced(0x53F32B, 0x53F120, *reinterpret_cast<DWORD*>(&ActorAnimController_selectDeathAnimation));
+		genCallEnforced(0x5580BC, 0x53F120, *reinterpret_cast<DWORD*>(&ActorAnimController_selectDeathAnimation));
+		genCallEnforced(0x567F23, 0x53F120, *reinterpret_cast<DWORD*>(&ActorAnimController_selectDeathAnimation));
+
 		// Disable turning on hello if the IdleAnim flag is set.
 		auto MobileActor_aiTurnWhileGreeting = &TES3::MobileActor::aiTurnWhileGreeting;
 		genCallEnforced(0x52EC26, 0x5268F0, *reinterpret_cast<DWORD*>(&MobileActor_aiTurnWhileGreeting));
