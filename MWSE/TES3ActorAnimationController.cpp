@@ -167,8 +167,8 @@ namespace TES3 {
 		auto state = patchedOverrideState;
 
 		if (state != 0xFF) {
-			auto baseAnimGroup = animationData->currentAnimGroup[0];
-			auto overrideAnimGroup = animationData->currentAnimGroup[2];
+			auto baseAnimGroup = animationData->currentAnimGroups[0];
+			auto overrideAnimGroup = animationData->currentAnimGroups[2];
 
 			// Check if override animation has completed.
 			if (overrideAnimGroup != baseAnimGroup) {
@@ -183,10 +183,10 @@ namespace TES3 {
 			else {
 				// Animation has completed, and been paused at the end. Signal controller to update animations.
 				if (state <= 1) {
-					animationData->currentAnimGroup[1] = AnimGroupID::NONE;
+					animationData->currentAnimGroups[1] = AnimGroupID::NONE;
 				}
 				if (state <= 2) {
-					animationData->currentAnimGroup[2] = AnimGroupID::NONE;
+					animationData->currentAnimGroups[2] = AnimGroupID::NONE;
 				}
 				// End override state.
 				patchedOverrideState = 0xFF;

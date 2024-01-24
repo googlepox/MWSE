@@ -2939,7 +2939,7 @@ namespace mwse::lua {
 
 					// Play the cast animation.
 					TES3::PlayerAnimationController* animationController = casterMobile->animationController.asPlayer;
-					animationController->animationData->timing[1] = 0.0;
+					animationController->animationData->timings[1] = 0.0;
 					animationController->startCastAnimation();
 				}
 
@@ -4399,7 +4399,7 @@ namespace mwse::lua {
 			return {};
 		}
 
-		return std::make_tuple(animData->currentAnimGroup[0], animData->currentAnimGroup[1], animData->currentAnimGroup[2]);
+		return std::make_tuple(animData->currentAnimGroups[0], animData->currentAnimGroups[1], animData->currentAnimGroups[2]);
 	}
 
 	void loadAnimation(sol::table params) {
@@ -4615,7 +4615,7 @@ namespace mwse::lua {
 		sol::state_view state = thisState;
 		sol::table result = state.create_table();
 		for (size_t i = 0; i < 3; ++i) {
-			result[i + 1] = animData->timing[i];
+			result[i + 1] = animData->timings[i];
 		}
 		return result;
 	}
@@ -4635,15 +4635,15 @@ namespace mwse::lua {
 		if (timing.valid() && timing != sol::nil) {
 			if (timing.is<float>()) {
 				const float fTiming = timing.as<float>();
-				animData->timing[0] = fTiming;
-				animData->timing[1] = fTiming;
-				animData->timing[2] = fTiming;
+				animData->timings[0] = fTiming;
+				animData->timings[1] = fTiming;
+				animData->timings[2] = fTiming;
 			}
 			else if (timing.is<sol::table>() && timing.as<sol::table>().size() == 3) {
 				auto timings = timing.as<sol::table>();
-				animData->timing[0] = timings[1];
-				animData->timing[1] = timings[2];
-				animData->timing[2] = timings[3];
+				animData->timings[0] = timings[1];
+				animData->timings[1] = timings[2];
+				animData->timings[2] = timings[3];
 			}
 		}
 	}

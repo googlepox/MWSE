@@ -293,7 +293,7 @@ namespace TES3 {
 						auto keyframes = modelLoader->loadKeyframes(path, "MWSE Anim");
 
 						if (animData && keyframes) {
-							animData->setOverrideLayerKeyframes(keyframes);
+							animData->setOverrideSourceKeyframes(keyframes);
 						}
 					}
 					else {

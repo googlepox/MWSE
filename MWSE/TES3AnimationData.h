@@ -17,7 +17,7 @@ namespace TES3 {
 			SequenceGroup() : lower(nullptr), upper(nullptr), leftArm(nullptr) {}
 			~SequenceGroup() {}
 
-			NI::Sequence* get(int section);
+			NI::Sequence* at(int section);
 		};
 		static_assert(sizeof(SequenceGroup) == 0xC, "TES3::AnimationAttachment::SequenceGroup failed size validation");
 
@@ -33,15 +33,15 @@ namespace TES3 {
 		float headLookAngleX; // 0x2C
 		float headLookAngleZ; // 0x30
 		float headLookClosestDistance; // 0x34
-		AnimGroupID currentAnimGroup[3]; // 0x38
+		AnimGroupID currentAnimGroups[3]; // 0x38
 		int currentActionIndices[3]; // 0x3C
 		int loopCounts[3]; // 0x48
 		unsigned int flags; // 0x54
-		float timing[3]; // 0x58
+		float timings[3]; // 0x58
 		float deltaTime; // 0x5C
 		AnimationGroup* animationGroups[150]; // 0x68
 		NI::KeyframeManager* manager; // 0x2C0
-		SequenceGroup keyframeLayers[3]; // 0x2C4
+		SequenceGroup keyframeSources[3]; // 0x2C4
 		NI::Geometry* headGeometry; // 0x2E8
 		float lipsyncLevel; // 0x2EC
 		float timeToNextBlink; // 0x2F0
@@ -50,8 +50,8 @@ namespace TES3 {
 		float talkMorphEndTime; // 0x2FC
 		float blinkMorphStartTime; // 0x300
 		float blinkMorphEndTime; // 0x304
-		int currentAnimGroupLayer[3];
-		unsigned char animGroupLayerIndices[150]; // 0x314
+		int currentAnimGroupSources[3];
+		unsigned char animGroupSourceIndices[150]; // 0x314
 		short approxRootTravelSpeeds[150]; // 0x3AA
 		unsigned short patchedCastSpeed; // 0x4D6 (8.8 fixed point format)
 		float movementSpeed; // 0x4D8
@@ -73,9 +73,9 @@ namespace TES3 {
 
 		void calcRootMovement(AnimGroupID animGroup);
 		void playAnimationGroupForSection(AnimGroupID animationGroup, int bodySection, int startFlag = 0, int loopCount = -1);
-		void mergeAnimGroups(AnimationGroup* firstGroup, int layerIndex);
+		void mergeAnimGroups(AnimationGroup* firstGroup, int sourceIndex);
 		void setHeadNode(NI::Node* head);
-		bool setLayerKeyframes(KeyframeDefinition* kfData, int layerIndex, bool isBiped);
+		bool setSourceKeyframes(KeyframeDefinition* kfData, int sourceIndex, bool isBiped);
 		void updateMovementDelta(float timing, Vector3* inout_startingPosition, bool dontUpdatePositionDelta);
 
 		//
@@ -86,21 +86,21 @@ namespace TES3 {
 
 		void playAnimationGroup(AnimGroupID animationGroup, int startFlag = 0, int loopCount = -1);
 		void cancelAnimationLoop(bool jumpToLoopEnd);
-		bool setOverrideLayerKeyframes(KeyframeDefinition* animData);
+		bool setOverrideSourceKeyframes(KeyframeDefinition* animData);
 		bool hasOverrideAnimations() const;
 		void swapAnimationGroups(AnimGroupID animationGroup1, AnimGroupID animationGroup2);
 
 		float getCastSpeed() const;
 		void setCastSpeed(float speed);
 
-		std::reference_wrapper<decltype(currentAnimGroup)> getCurrentAnimGroups();
+		std::reference_wrapper<decltype(currentAnimGroups)> getCurrentAnimGroups();
 		std::reference_wrapper<decltype(currentActionIndices)> getCurrentActionIndices();
 		std::reference_wrapper<decltype(loopCounts)> getLoopCounts();
-		std::reference_wrapper<decltype(timing)> getTimings();
+		std::reference_wrapper<decltype(timings)> getTimings();
 		std::reference_wrapper<decltype(animationGroups)> getAnimationGroups();
-		std::reference_wrapper<decltype(keyframeLayers)> getKeyframeLayers();
-		std::reference_wrapper<decltype(currentAnimGroupLayer)> getCurrentAnimGroupLayers();
-		std::reference_wrapper<decltype(animGroupLayerIndices)> getAnimGroupLayerIndices();
+		std::reference_wrapper<decltype(keyframeSources)> getKeyframeSources();
+		std::reference_wrapper<decltype(currentAnimGroupSources)> getCurrentAnimGroupSources();
+		std::reference_wrapper<decltype(animGroupSourceIndices)> getAnimGroupSourceIndices();
 		std::reference_wrapper<decltype(approxRootTravelSpeeds)> getApproxRootTravelSpeeds();
 		std::reference_wrapper<decltype(currentSoundGenIndices)> getCurrentSoundGenIndices();
 		std::reference_wrapper<decltype(animGroupSoundGenCounts)> getAnimGroupSoundGenCounts();
@@ -112,7 +112,7 @@ namespace TES3 {
 	struct AnimationData : AnimationDataVanilla {
 		struct TargetAnimGroup {
 			AnimationGroup* group;
-			int layer;
+			int sourceIndex;
 		};
 		struct TemporarySwitchedGroup {
 			TargetAnimGroup temporary;
@@ -121,8 +121,8 @@ namespace TES3 {
 		};
 
 		// These members need to be explicitly constructed in ctor().
-		std::vector<SequenceGroup> customLayers;
-		std::vector<KeyframeDefinition*> customAnims;
+		std::vector<SequenceGroup> customSources;
+		std::vector<KeyframeDefinition*> customAnimDefinitions;
 		std::unordered_map<std::string_view, TargetAnimGroup> namedGroups;
 		std::vector<TemporarySwitchedGroup> temporarySwitchedGroups;
 
@@ -136,21 +136,25 @@ namespace TES3 {
 		AnimationData* ctor();
 		void dtor();
 
-		void mergeAnimGroups(AnimationGroup* animGroup, int layerIndex);
+		void mergeAnimGroups(AnimationGroup* animGroup, int sourceIndex);
 		void playAnimationGroupForSection(AnimGroupID groupId, int bodySection, int startFlag = 0, int loopCount = -1);
 		void playNamedAnimationGroup(std::string_view name, int bodySection, int startFlag = 0, int loopCount = -1);
-		bool setLayerKeyframes(KeyframeDefinition* kfData, int layerIndex, bool isBiped);
+		bool setSourceKeyframes(KeyframeDefinition* kfData, int sourceIndex, bool isBiped);
 
 		//
 		// Custom functions.
 		//
 
+		void deactivateSources();
+		void reactivateSources();
+
 		bool applyTargetGroup(const TargetAnimGroup& targetGroup);
 		bool getVanillaTarget(AnimGroupID groupId, TargetAnimGroup& out_target);
 		bool hasNamedGroup(std::string_view name);
-		void mergeAnimGroup(AnimationGroup* animGroup, int layerIndex);
+		void mergeAnimGroup(AnimationGroup* animGroup, int lasourceIndexyerIndex);
 		void onSectionInheritAnim(int bodySection);
 
+		void revertSwitchedGroup(const TemporarySwitchedGroup& tsg);
 		void revertTemporarySwitches(int bodySection);
 		void setTemporarySwitch(TargetAnimGroup& target, int bodySection);
 
@@ -159,8 +163,8 @@ namespace TES3 {
 		bool removeCustomAnim(std::string_view name);
 		void resetCustomAnims();
 
-		std::reference_wrapper<decltype(customLayers)> getKeyframeLayers();
-		std::reference_wrapper<decltype(customAnims)> getAnimations();
+		std::reference_wrapper<decltype(customSources)> getKeyframeSources();
+		std::reference_wrapper<decltype(customAnimDefinitions)> getAnimationDefinitions();
 
 		static void patch();
 	};

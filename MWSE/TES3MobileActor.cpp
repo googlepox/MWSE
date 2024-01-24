@@ -751,7 +751,7 @@ namespace TES3 {
 			auto animData = animationController.asActor->animationData;
 			if (animData) {
 				// Check for hit stun animations.
-				auto bodyAnimGroup = animData->currentAnimGroup[0];
+				auto bodyAnimGroup = animData->currentAnimGroups[0];
 				return bodyAnimGroup >= AnimGroupID::Hit1 && bodyAnimGroup <= AnimGroupID::SwimHit3;
 			}
 		}
@@ -1434,7 +1434,7 @@ namespace TES3 {
 		}
 
 		// Conditionals matching the hit stun mechanics.
-		auto animGroup = animData->currentAnimGroup[0];
+		auto animGroup = animData->currentAnimGroups[0];
 		if (!isNotKnockedDownOrOut() || (animGroup >= AnimGroupID::Hit1 && animGroup <= AnimGroupID::SwimHit3)) {
 			return false;
 		}
