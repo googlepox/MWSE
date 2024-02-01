@@ -307,7 +307,39 @@ namespace TES3 {
 		// Store anim source. This is read by extension code inside setSourceKeyframes.
 		customAnimDefinitions[sourceIndex] = kfData;
 
-		return TES3_AnimationData_setSourceKeyframes(this, kfData, sourceIndex, isBiped);
+		// Call original function, which has some patches applied.
+		bool result = TES3_AnimationData_setSourceKeyframes(this, kfData, sourceIndex, isBiped);
+
+		if (result && isBiped) {
+			// Check cloned sequences for bones that don't exist and remove them.
+			for (int bodySection = 0; bodySection < BodySectionCount; ++bodySection) {
+				auto seq = customSources[sourceIndex].at(bodySection);
+				if (seq == nullptr) {
+					continue;
+				}
+
+				// Re-implementation of remove_if on both arrays that handles TArray object lifetimes correctly.
+				int removeIndex = 0;
+				for (int i = 0; i < seq->objectNames.endIndex; ++i) {
+					if (actorNode->getObjectByName(seq->objectNames[i])) {
+						if (removeIndex < i) {
+							std::swap(seq->objectNames.at(i), seq->objectNames.at(removeIndex));
+							std::swap(seq->controllers.at(i), seq->controllers.at(removeIndex));
+						}
+						++removeIndex;
+					}
+				}
+				for (int i = removeIndex; i < seq->objectNames.endIndex; ++i) {
+					// mwse::log::getLog() << "[AnimLoader] Discarding unmatched bone '" << seq->objectNames.at(i) << "' from " << actorNode->getName() << std::endl;
+					mwse::tes3::_delete(seq->objectNames.at(i));
+					seq->objectNames.at(i) = nullptr;
+					seq->controllers.at(i) = nullptr;
+				}
+				seq->objectNames.endIndex = removeIndex;
+				seq->controllers.endIndex = removeIndex;
+			}
+		}
+		return result;
 	}
 
 	void AnimationData::mergeAnimGroup(AnimationGroup* animGroup, int sourceIndex) {
