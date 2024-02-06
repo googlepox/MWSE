@@ -116,7 +116,7 @@ namespace TES3 {
 				if (timings[0] < loopEndTiming) {
 					for (int i = 0; i < BodySectionCount; ++i) {
 						if (currentAnimGroups[i] == lowerGroup) {
-							timings[i] = loopEndTiming;
+							setTiming(lowerGroup, i, loopEndTiming);
 						}
 					}
 				}
@@ -137,6 +137,20 @@ namespace TES3 {
 		return keyframeSources[0].lower != nullptr;
 	}
 
+	void AnimationDataVanilla::setTiming(AnimGroupID groupId, int bodySection, float t) {
+		// Update timing.
+		timings[bodySection] = t;
+
+		// Update index of next soundgen event.
+		int i, count = animGroupSoundGenCounts[int(groupId)];
+		for (i = 0; i < count; ++i) {
+			if (t <= animGroupSoundGens[int(groupId)][i]->startTime) {
+				break;
+			}
+		}
+		currentSoundGenIndices[bodySection] = i;
+	}
+
 	void AnimationDataVanilla::swapAnimationGroups(AnimGroupID animationGroup1, AnimGroupID animationGroup2) {
 		// Swap all animation group specific data.
 		int g1 = int(animationGroup1), g2 = int(animationGroup2);
@@ -152,14 +166,16 @@ namespace TES3 {
 			auto sequenceGroup = &this->keyframeSources[i].lower;
 
 			if (group == g1 || group == g2) {
-				// Reset timing to the start of the current action.
-				timings[i] = animationGroups[group]->actionTimings[currentActionIndices[i]];
-
+				// Ensure correct sequence is activated.
 				if (currentAnimGroupSources[i] != animGroupSourceIndices[group]) {
 					manager->deactivateSequence(sequenceGroup[currentAnimGroupSources[i]]);
 					manager->activateSequence(sequenceGroup[animGroupSourceIndices[group]]);
 					currentAnimGroupSources[i] = animGroupSourceIndices[group];
 				}
+
+				// Reset timing to the start of the current action.
+				float t = animationGroups[group]->actionTimings[currentActionIndices[i]];
+				setTiming(AnimGroupID(group), i, t);
 			}
 		}
 
@@ -552,10 +568,11 @@ namespace TES3 {
 
 		// Reset source indices and timings to the start of the action for any currently running anims, if they use the new group.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto group = int(currentAnimGroups[i]);
-			if (animGroupSourceIndices[group] == sourceIndex && currentAnimGroupSources[i] != sourceIndex) {
+			auto groupId = currentAnimGroups[i];
+			if (animGroupSourceIndices[int(groupId)] == sourceIndex && currentAnimGroupSources[i] != sourceIndex) {
 				currentAnimGroupSources[i] = sourceIndex;
-				timings[i] = animationGroups[group]->actionTimings[currentActionIndices[i]];
+				float t = animationGroups[int(groupId)]->actionTimings[currentActionIndices[i]];
+				setTiming(groupId, i, t);
 			}
 		}
 		reactivateSources();
@@ -638,10 +655,11 @@ namespace TES3 {
 
 		// Reset source indices and timings to the start of the action for any currently running anims, if they use any of the new groups.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto group = int(currentAnimGroups[i]);
-			if (animGroupSourceIndices[group] == sourceIndex && currentAnimGroupSources[i] != sourceIndex) {
+			auto groupId = int(currentAnimGroups[i]);
+			if (animGroupSourceIndices[groupId] == sourceIndex && currentAnimGroupSources[i] != sourceIndex) {
 				currentAnimGroupSources[i] = sourceIndex;
-				timings[i] = animationGroups[group]->actionTimings[currentActionIndices[i]];
+				float t = animationGroups[groupId]->actionTimings[currentActionIndices[i]];
+				setTiming(AnimGroupID(groupId), i, t);
 			}
 		}
 		reactivateSources();
@@ -692,10 +710,11 @@ namespace TES3 {
 
 		// Reset timings to the start of the action for any currently running anims, if they were using this source.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto group = int(currentAnimGroups[i]);
+			auto groupId = int(currentAnimGroups[i]);
 			if (currentAnimGroupSources[i] == sourceIndex) {
-				currentAnimGroupSources[i] = animGroupSourceIndices[group];
-				timings[i] = animationGroups[group]->actionTimings[currentActionIndices[i]];
+				currentAnimGroupSources[i] = animGroupSourceIndices[groupId];
+				float t = animationGroups[groupId]->actionTimings[currentActionIndices[i]];
+				setTiming(AnimGroupID(groupId), i, t);
 			}
 		}
 		reactivateSources();
@@ -720,10 +739,11 @@ namespace TES3 {
 
 		// Reset source indices and timings to the start of the action for any currently running anims.
 		for (int i = 0; i < BodySectionCount; ++i) {
-			auto group = int(currentAnimGroups[i]);
-			if (currentAnimGroupSources[i] != animGroupSourceIndices[group]) {
-				currentAnimGroupSources[i] = animGroupSourceIndices[group];
-				timings[i] = animationGroups[group]->actionTimings[currentActionIndices[i]];
+			auto groupId = int(currentAnimGroups[i]);
+			if (currentAnimGroupSources[i] != animGroupSourceIndices[groupId]) {
+				currentAnimGroupSources[i] = animGroupSourceIndices[groupId];
+				float t = animationGroups[groupId]->actionTimings[currentActionIndices[i]];
+				setTiming(AnimGroupID(groupId), i, t);
 			}
 		}
 

@@ -566,6 +566,7 @@ namespace TES3 {
 		AnimationGroup* standardParseGroups = nullptr;
 		int standardParseCount = TES3_parseSeqTextKeysToAnimGroups(sequence, meshPath, &standardParseGroups);
 
+		// Compare total anim groups found.
 		int newParseCount = 0;
 		for (const AnimationGroup* agNew = kfData->animationGroups; agNew; agNew = agNew->nextGroup, ++newParseCount) {}
 		mwse::log::getLog() << "[AnimParser] Testing anim=" << meshPath << std::endl;
@@ -574,9 +575,13 @@ namespace TES3 {
 		const AnimationGroup* agStd = standardParseGroups;
 		for (const AnimationGroup* agNew = kfData->animationGroups; agNew && agStd; agNew = agNew->nextGroup, agStd = agStd->nextGroup) {
 			mwse::log::getLog() << "[AnimParser] Checking group=" << TES3_animGroupNames[int(agNew->groupId)] << std::endl;
+
+			// Compare group id.
 			if (agNew->groupId != agStd->groupId) {
 				mwse::log::getLog() << "[AnimParser] TEST FAIL groupId std=" << TES3_animGroupNames[int(agStd->groupId)] << " new=" << TES3_animGroupNames[int(agNew->groupId)] << std::endl;
 			}
+
+			// Compare if actions match, using frame numbers. Action timing is a deferred calculation in vanilla.
 			if (agNew->actionCount != agStd->actionCount) {
 				mwse::log::getLog() << "[AnimParser] TEST FAIL actionCount std=" << int(agStd->actionCount) << " new=" << int(agNew->actionCount) << std::endl;
 			}
@@ -588,11 +593,29 @@ namespace TES3 {
 					}
 				}
 			}
-			if (agNew->soundGenCount != agStd->soundGenCount) {
-				mwse::log::getLog() << "[AnimParser] TEST FAIL soundGenCount std=" << int(agStd->soundGenCount) << " new=" << int(agNew->soundGenCount) << std::endl;
+
+			// Compare sounds. Sound timing is a deferred calculation in vanilla.
+			// Vanilla can have sound events past the end of the animation, so these are excluded from tests.
+			unsigned int i, stdSoundGenCount = 0, newSoundGenCount = 0;
+			if (agStd->actionCount > 0) {
+				auto lastActionFrame = agStd->actionFrames[agStd->actionCount - 1];
+
+				for (i = 0; i < agStd->soundGenCount; ++i) {
+					if (agStd->soundGenKeys[i].startFrame <= lastActionFrame) {
+						stdSoundGenCount++;
+					}
+				}
+				for (i = 0; i < agNew->soundGenCount; ++i) {
+					if (agNew->soundGenKeys[i].startFrame <= lastActionFrame && !AnimationGroup::LuaEvent::toEvent(agNew->soundGenKeys[i].sound)) {
+						newSoundGenCount++;
+					}
+				}
+			}
+			if (newSoundGenCount != stdSoundGenCount) {
+				mwse::log::getLog() << "[AnimParser] TEST FAIL soundGenCount std=" << int(stdSoundGenCount) << " new=" << int(newSoundGenCount) << std::endl;
 			}
 			else {
-				for (unsigned int i = 0; i < agStd->soundGenCount; ++i) {
+				for (unsigned int i = 0; i < stdSoundGenCount; ++i) {
 					auto s1 = &agStd->soundGenKeys[i], s2 = &agNew->soundGenKeys[i];
 					// startTime is a deferred calculation in vanilla.
 					if (s1->startFrame != s2->startFrame
