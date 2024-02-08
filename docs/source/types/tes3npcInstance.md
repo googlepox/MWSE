@@ -218,10 +218,10 @@ The bounding box for the object.
 
 ***
 
-### `factionIndex`
-<div class="search_terms" style="display: none">factionindex</div>
+### `factionRank`
+<div class="search_terms" style="display: none">factionrank</div>
 
-Deprecated. Use `reputation` instead.
+*Read-only*. Quick access to the base NPC's faction rank.
 
 **Returns**:
 

@@ -104,6 +104,7 @@ namespace mwse::lua {
 
 			// Convenient base object access.
 			usertypeDefinition["class"] = sol::readonly_property(&TES3::NPCInstance::getBaseClass);
+			usertypeDefinition["factionRank"] = sol::readonly_property(&TES3::NPCInstance::getBaseFactionRank);
 			usertypeDefinition["faction"] = sol::readonly_property(&TES3::NPCInstance::getBaseFaction);
 			usertypeDefinition["race"] = sol::readonly_property(&TES3::NPCInstance::getBaseRace);
 			usertypeDefinition["script"] = sol::readonly_property(&TES3::NPCInstance::getBaseScript);

@@ -665,6 +665,33 @@ namespace se::cs::dialog::object_window {
 	}
 
 	//
+	// Column: Creature Soul Value
+	//
+
+	TabColumnCreatureSoulValue::TabColumnCreatureSoulValue() : TabColumn("Soul", LVCFMT_CENTER) {
+
+	}
+
+	bool TabColumnCreatureSoulValue::supportsObjectType(ObjectType::ObjectType objectType) const {
+		return objectType == ObjectType::Creature;
+	}
+
+	void TabColumnCreatureSoulValue::getDisplayInfo(LPNMLVDISPINFOA displayInfo) const {
+		auto object = static_cast<const Creature*>(getObjectFromDisplayInfo(displayInfo));
+		display(displayInfo, object->soul);
+	}
+
+	int TabColumnCreatureSoulValue::sortObject(const Object* lParam1, const Object* lParam2, bool sortOrderAsc) const {
+		const auto a = static_cast<const Creature*>(lParam1)->soul;
+		const auto b = static_cast<const Creature*>(lParam2)->soul;
+		return sort(a, b, sortOrderAsc);
+	}
+
+	TabColumn::ColumnSettings& TabColumnCreatureSoulValue::getSettings() const {
+		return settings.object_window.column_creature_soul;
+	}
+
+	//
 	// Column: Creature Sound
 	//
 
@@ -2229,6 +2256,7 @@ namespace se::cs::dialog::object_window {
 	TabColumnCreatureIsBipedal TabController::tabColumnCreatureIsBipedal;
 	TabColumnCreatureList TabController::tabColumnCreatureList;
 	TabColumnCreatureMovementType TabController::tabColumnCreatureMovementType;
+	TabColumnCreatureSoulValue TabController::tabColumnCreatureSoul;
 	TabColumnCreatureSound TabController::tabColumnCreatureSound;
 	TabColumnCreatureUsesWeaponAndShield TabController::tabColumnCreatureUsesWeaponAndShield;
 	TabColumnEffect TabController::tabColumnEffect1(0);
@@ -2486,6 +2514,7 @@ namespace se::cs::dialog::object_window {
 			tabColumnCreatureMovementType.addToController(this, hWnd);
 			tabColumnCreatureUsesWeaponAndShield.addToController(this, hWnd);
 			tabColumnCreatureIsBipedal.addToController(this, hWnd);
+			tabColumnCreatureSoul.addToController(this, hWnd);
 			tabColumnModel.addToController(this, hWnd);
 			tabColumnPersists.addToController(this, hWnd);
 			break;

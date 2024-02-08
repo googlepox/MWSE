@@ -138,6 +138,7 @@ namespace TES3 {
 
 		Class* getBaseClass();
 		Faction* getBaseFaction();
+		unsigned char getBaseFactionRank();
 		Race* getBaseRace();
 		Script* getBaseScript();
 		SpellList* getBaseSpellList();

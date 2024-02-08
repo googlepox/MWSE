@@ -310,8 +310,8 @@ Easy access to the actor's "MRT" movement root node.
 
 ***
 
-### `positionDeltaOfMovementRoot`
-<div class="search_terms" style="display: none">positiondeltaofmovementroot</div>
+### `positionDeltaMovementRoot`
+<div class="search_terms" style="display: none">positiondeltamovementroot</div>
 
 Tracks the change from the last frame of the "MRT" child node that controls animation driven movement.
 

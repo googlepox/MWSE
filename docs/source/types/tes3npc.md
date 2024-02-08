@@ -196,17 +196,6 @@ The bounding box for the object.
 
 ***
 
-### `factionIndex`
-<div class="search_terms" style="display: none">factionindex</div>
-
-Deprecated. Use `reputation` instead.
-
-**Returns**:
-
-* `result` (number)
-
-***
-
 ### `factionRank`
 <div class="search_terms" style="display: none">factionrank</div>
 

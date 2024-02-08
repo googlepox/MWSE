@@ -6,7 +6,7 @@
 	More information: https://github.com/MWSE/MWSE/tree/master/docs
 -->
 
-The tes3ui library provides access to manipulating the game's GUI.
+The `tes3ui` library provides access to manipulating the game's GUI.
 
 ## Functions
 
@@ -494,13 +494,13 @@ local result = tes3ui.leaveMenuMode()
 Logs a message to the console. The message accepts formatting and additional parameters matching string.format's usage.
 
 ```lua
-tes3ui.log(message, formatValues)
+tes3ui.log(message, ...)
 ```
 
 **Parameters**:
 
 * `message` (string)
-* `formatValues` (variadic): *Optional*.
+* `...` (any): *Optional*. Formatting arguments. These are passed to `string.format`.
 
 ??? example "Example: Print the type of each of the player's skills to the console"
 
@@ -887,6 +887,31 @@ local wasShown = tes3ui.showJournal()
 
 ***
 
+### `tes3ui.showMagicSelectMenu`
+<div class="search_terms" style="display: none">showmagicselectmenu, magicselectmenu</div>
+
+This function opens the magic select menu, which lets the player select a spell or enchanted item. This is originally used by the quick key menu. The spells or enchanted items are taken from the player's spell list and inventory. The selected spell or item can be retrieved in the function assigned to `callback`.
+
+```lua
+tes3ui.showMagicSelectMenu({ title = ..., selectSpells = ..., selectPowers = ..., selectEnchanted = ..., callback = ... })
+```
+
+**Parameters**:
+
+* `params` (table)
+	* `title` (string): The text used for the title of the magic select menu.
+	* `selectSpells` (boolean): *Default*: `true`. If spells are included in the selection list.
+	* `selectPowers` (boolean): *Default*: `true`. If powers are included in the selection list.
+	* `selectEnchanted` (boolean): *Default*: `true`. If enchanted items are included in the selection list.
+	* `callback` (function): *Optional*. A function which will be called once the magic select menu has been closed, including when no item has been selected. A table `callbackParams` will be passed to this function.
+		- `callbackParams` (table)
+			- `spell` ([tes3spell](https://mwse.github.io/MWSE/types/tes3spell/)): The spell or power that has been selected. Can be `nil`.
+			- `item` ([tes3item](https://mwse.github.io/MWSE/types/tes3item/)): The enchanted item that has been selected. The actual magic will be `item.enchantment`. Can be `nil`.
+			- `itemData` ([tes3itemData](https://mwse.github.io/MWSE/types/tes3itemData/)): The item data of the enchanted item that has been selected. Fully recharged items may not have itemData. Can be `nil`.
+
+
+***
+
 ### `tes3ui.showMessageMenu`
 <div class="search_terms" style="display: none">showmessagemenu, messagemenu</div>
 
@@ -919,13 +944,13 @@ tes3ui.showMessageMenu({ id = ..., buttons = ..., callbackParams = ..., cancels 
 Creates a new notify menu with a formatted string. A notify menu is a toast-style display that shows at the bottom of the screen. It will expire after an amount of time, determined by the length of the message and the `fMessageTimePerChar` GMST.
 
 ```lua
-local menu = tes3ui.showNotifyMenu(string, formatValues)
+local menu = tes3ui.showNotifyMenu(string, ...)
 ```
 
 **Parameters**:
 
 * `string` (string): The message to display. If it supports formatting, additional arguments are used.
-* `formatValues` (variadic): Optional values to feed to formatting found in the first parameter.
+* `...` (any): *Optional*. Formatting arguments. These are passed to `string.format`.
 
 **Returns**:
 

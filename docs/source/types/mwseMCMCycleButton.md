@@ -6,10 +6,21 @@
 	More information: https://github.com/MWSE/MWSE/tree/master/docs
 -->
 
+A button setting that cycles between given option states. Has similar uses to Dropdown setting.
 
-
-This type inherits the following: [mwseMCMSetting](../types/mwseMCMSetting.md), [mwseMCMComponent](../types/mwseMCMComponent.md)
+This type inherits the following: [mwseMCMButton](../types/mwseMCMButton.md), [mwseMCMSetting](../types/mwseMCMSetting.md), [mwseMCMComponent](../types/mwseMCMComponent.md)
 ## Properties
+
+### `buttonText`
+<div class="search_terms" style="display: none">buttontext</div>
+
+The text shown on the button.
+
+**Returns**:
+
+* `result` (string)
+
+***
 
 ### `callback`
 <div class="search_terms" style="display: none">callback</div>
@@ -88,14 +99,25 @@ If in a [Sidebar Page](./mwseMCMSideBarPage.md), the description will be shown o
 
 ***
 
-### `elements`
-<div class="search_terms" style="display: none">elements</div>
+### `disabledText`
+<div class="search_terms" style="display: none">disabledtext, dtext</div>
 
-This dictionary holds all the UI elements of the Component, for easy access.
+This text is shown on the button if the `buttonText` isn't set.
 
 **Returns**:
 
-* `result` ([mwseMCMComponentElements](../types/mwseMCMComponentElements.md))
+* `result` (string)
+
+***
+
+### `elements`
+<div class="search_terms" style="display: none">elements</div>
+
+This dictionary-style table holds all the UI elements of the Button, for easy access.
+
+**Returns**:
+
+* `result` ([mwseMCMButtonElements](../types/mwseMCMButtonElements.md))
 
 ***
 
@@ -135,7 +157,7 @@ If true, the setting is disabled while the game is on main menu.
 ### `label`
 <div class="search_terms" style="display: none">label</div>
 
-The text of the component. Not all component types have a label.
+The text shown next to the button.
 
 **Returns**:
 
@@ -450,28 +472,30 @@ local component = myObject:getComponent({ class = ..., label = ..., indent = ...
 
 * `componentData` ([mwseMCMComponent](../types/mwseMCMComponent.md), table)
 	* `class` (string): The component type to get. On of the following:
+		- `"Template"`
+		- `"ExclusionsPage"`
+		- `"FilterPage"`
+		- `"MouseOverPage"`
+		- `"Page"`
+		- `"SideBarPage"`
 		- `"Category"`
 		- `"SideBySideBlock"`
 		- `"ActiveInfo"`
 		- `"Hyperlink"`
 		- `"Info"`
 		- `"MouseOverInfo"`
-		- `"ExclusionsPage"`
-		- `"FilterPage"`
-		- `"MouseOverPage"`
-		- `"Page"`
-		- `"SideBarPage"`
-		- `"Button"`
-		- `"DecimalSlider"`
-		- `"Dropdown"`
-		- `"KeyBinder"`
-		- `"OnOffButton"`
-		- `"ParagraphField"`
 		- `"Setting"`
-		- `"Slider"`
-		- `"TextField"`
+		- `"Button"`
+		- `"OnOffButton"`
 		- `"YesNoButton"`
-		- `"Template"`
+		- `"CycleButton"`
+		- `"KeyBinder"`
+		- `"Dropdown"`
+		- `"TextField"`
+		- `"ParagraphField"`
+		- `"Slider"`
+		- `"DecimalSlider"`
+		- `"PercentageSlider"`
 	* `label` (string): *Optional*. The label text to set for the new component. Not all component types have a label.
 	* `indent` (integer): *Default*: `12`. The left padding size in pixels. Only used if the `childIndent` isn't set on the parent component.
 	* `childIndent` (integer): *Optional*. The left padding size in pixels. Used on all the child components.
@@ -484,6 +508,17 @@ local component = myObject:getComponent({ class = ..., label = ..., indent = ...
 **Returns**:
 
 * `component` ([mwseMCMComponent](../types/mwseMCMComponent.md))
+
+***
+
+### `getText`
+<div class="search_terms" style="display: none">gettext, text</div>
+
+This method is unused in cycle button setting.
+
+```lua
+myObject:getText()
+```
 
 ***
 
@@ -516,7 +551,7 @@ local button = myObject:new({ label = ..., description = ..., options = ..., lef
 * `data` (table)
 	* `label` (string): *Optional*. Text shown next to the button.
 	* `description` (string): *Optional*. If in a [Sidebar Page](../types/mwseMCMSideBarPage.md), the description will be shown on mouseover.
-	* `options` ([mwseMCMDropdownOption](../types/mwseMCMDropdownOption.md)[]): This table holds the text and variable value for each of the cycle button's options.
+	* `options` ([tes3uiCycleButtonOption](../types/tes3uiCycleButtonOption.md)[]): This table holds the text and variable value for each of the cycle button's options.
 	* `leftSide ` (boolean): *Default*: `true`. If true, the button will be created on the left and label on the right.
 	* `variable` ([mwseMCMVariable](../types/mwseMCMVariable.md), [mwseMCMSettingNewVariable](../types/mwseMCMSettingNewVariable.md)): *Optional*. A variable for this cycle button.
 	* `defaultSetting` (unknown): *Optional*. If `defaultSetting` wasn't passed in the `variable` table, can be passed here. The new variable will be initialized to this value.
@@ -558,6 +593,17 @@ local data = myObject:prepareData(data)
 
 ***
 
+### `press`
+<div class="search_terms" style="display: none">press</div>
+
+This method is unused in cycle button setting.
+
+```lua
+myObject:press()
+```
+
+***
+
 ### `printComponent`
 <div class="search_terms" style="display: none">printcomponent</div>
 
@@ -588,10 +634,21 @@ myObject:registerMouseOverElements(mouseOverList)
 
 ***
 
+### `setText`
+<div class="search_terms" style="display: none">settext, text</div>
+
+This method is unused in cycle button setting.
+
+```lua
+myObject:setText()
+```
+
+***
+
 ### `update`
 <div class="search_terms" style="display: none">update</div>
 
-Calls the Setting's callback method and if `restartRequired` is set to true, notifies the player to restart the game.
+Sets the button UI element text to `self.buttonText`. Calls the Button's callback method and if `restartRequired` is set to true, notifies the player to restart the game.
 
 ```lua
 myObject:update()

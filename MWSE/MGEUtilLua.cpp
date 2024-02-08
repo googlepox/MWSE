@@ -77,10 +77,6 @@ namespace mwse::lua {
 			if (mge::apiVersion >= 2) {
 				lua_mge["saveScreenshot"] = &CoreInterface::saveScreenshot;
 			}
-
-			if (mge::apiVersion >= 3) {
-				lua_mge["nearRenderDistance"] = sol::property(&CoreInterface::getNearRenderDistance, &CoreInterface::setNearRenderDistance);
-			}
 		}
 
 		// Rendering feature functions.
@@ -156,6 +152,10 @@ namespace mwse::lua {
 			usertypeDefinition["zoomEnable"] = sol::property(&CameraConfig::getZoomEnabled, &CameraConfig::setZoomEnabled);
 			usertypeDefinition["zoomIn"] = CameraConfig::zoomIn;
 			usertypeDefinition["zoomOut"] = CameraConfig::zoomOut;
+
+			if (mge::apiVersion >= 3) {
+				usertypeDefinition["nearRenderDistance"] = sol::property(&CameraConfig::getNearRenderDistance, &CameraConfig::setNearRenderDistance);
+			}
 		}
 		lua_mge["camera"] = mge::lua::CameraConfig();
 

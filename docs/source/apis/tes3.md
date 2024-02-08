@@ -6,7 +6,7 @@
 	More information: https://github.com/MWSE/MWSE/tree/master/docs
 -->
 
-The tes3 library provides the majority of the functions for interacting with the game system.
+The `tes3` library provides the majority of the functions for interacting with the game system.
 
 ## Properties
 
@@ -225,6 +225,8 @@ local createdData = tes3.addItemData({ to = ..., item = ..., updateGUI = ... })
 <div class="search_terms" style="display: none">addjournalentry, journalentry</div>
 
 This function creates a new journal entry. It can be called once the world controller is loaded.
+
+The text uses the same HTML-style formatting as books, which has different layout to regular dialogue. Use `<BR>` for line breaks that can span pages instead of `\\n`.
 
 ```lua
 tes3.addJournalEntry({ text = ..., showMessage = ... })
@@ -3506,7 +3508,7 @@ local inMenuMode = tes3.menuMode()
 Displays a message box. This may be a simple toast-style message, or a box with choice buttons.
 
 ```lua
-local element = tes3.messageBox({ message = ..., buttons = ..., callback = ..., showInDialog = ..., duration = ... }, formatAdditions)
+local element = tes3.messageBox({ message = ..., buttons = ..., callback = ..., showInDialog = ..., duration = ... }, ...)
 ```
 
 **Parameters**:
@@ -3517,7 +3519,7 @@ local element = tes3.messageBox({ message = ..., buttons = ..., callback = ..., 
 	* `callback` (fun(e: [tes3messageBoxCallbackData](../types/tes3messageBoxCallbackData.md))): *Optional*. The callback function will be executed after a button was pressed. The callback function will be passed a table with `button` field corresponding to 0-based index of the button from passed `buttons` array.
 	* `showInDialog` (boolean): *Default*: `true`. Specifying showInDialog = false forces the toast-style message, which is not shown in the dialog menu.
 	* `duration` (number): *Optional*. Overrides how long the toast-style message remains visible.
-* `formatAdditions` (variadic): *Optional*. Only used if messageOrParams is a string.
+* `...` (any): *Optional*. Formatting arguments. These are passed to `string.format`, provided `messageOrParams` is a `string`.
 
 **Returns**:
 
@@ -3578,7 +3580,7 @@ tes3.modStatistic({ reference = ..., attribute = ..., skill = ..., name = ..., b
 	* `reference` ([tes3mobileActor](../types/tes3mobileActor.md), [tes3reference](../types/tes3reference.md), string)
 	* `attribute` ([tes3.attribute](../references/attributes.md)): *Optional*. The attribute to set. Uses a value from [`tes3.attribute`](https://mwse.github.io/MWSE/references/attributes/)
 	* `skill` ([tes3.skill](../references/skills.md)): *Optional*. The skill to set. Uses a value from [`tes3.skill`](https://mwse.github.io/MWSE/references/skills/)
-	* `name` (string): *Optional*. The property name of the statistic to set. The names can be taken from the properties of `tes3mobileNPC` or `tes3mobileCreature`. Useful for specifying health, magicka or fatigue.
+	* `name` (string): *Optional*. The property name of the statistic to set. The names can be taken from the properties of `tes3mobileNPC` or `tes3mobileCreature`. Useful for specifying health, magicka, fatigue or encumbrance.
 	* `base` (number): *Optional*. If set, the base value will be modified.
 	* `current` (number): *Optional*. If set, the current value will be modified.
 	* `value` (number): *Optional*. If set, both the base and current value will be modified.
@@ -4610,7 +4612,7 @@ tes3.setStatistic({ reference = ..., attribute = ..., skill = ..., name = ..., b
 	* `reference` ([tes3mobileActor](../types/tes3mobileActor.md), [tes3reference](../types/tes3reference.md), string)
 	* `attribute` ([tes3.attribute](../references/attributes.md), integer): *Optional*. The attribute to set. Uses a value from [`tes3.attribute`](https://mwse.github.io/MWSE/references/attributes/)
 	* `skill` ([tes3.skill](../references/skills.md), integer): *Optional*. The skill to set. Uses a value from [`tes3.skill`](https://mwse.github.io/MWSE/references/skills/)
-	* `name` (string): *Optional*. The property name of the statistic to set. The names can be taken from the properties of `tes3mobileNPC` or `tes3mobileCreature`. Useful for specifying health, magicka or fatigue.
+	* `name` (string): *Optional*. The property name of the statistic to set. The names can be taken from the properties of `tes3mobileNPC` or `tes3mobileCreature`. Useful for specifying health, magicka, fatigue or encumbrance.
 	* `base` (number): *Optional*. If set, the base value will be set.
 	* `current` (number): *Optional*. If set, the current value will be set.
 	* `value` (number): *Optional*. If set, both the base and current value will be set.

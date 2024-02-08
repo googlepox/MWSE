@@ -2,7 +2,7 @@
 -- More information: https://github.com/MWSE/MWSE/tree/master/docs
 
 --- @meta
---- The tes3ui library provides access to manipulating the game's GUI.
+--- The `tes3ui` library provides access to manipulating the game's GUI.
 --- @class tes3uilib
 tes3ui = {}
 
@@ -174,7 +174,7 @@ function tes3ui.leaveMenuMode() end
 ---
 --- [Examples available in online documentation](https://mwse.github.io/MWSE/apis/tes3ui/#tes3uilog).
 --- @param message string No description yet available.
---- @param ... any? *Optional*. No description yet available.
+--- @param ... any? *Optional*. Formatting arguments. These are passed to `string.format`.
 function tes3ui.log(message, ...) end
 
 --- Logs a message to the console. Consider using `tes3ui.log` instead of this function if you do not need to make use of the `isCommand` parameter.
@@ -322,6 +322,38 @@ function tes3ui.showInventorySelectMenu(params) end
 --- @return boolean wasShown No description yet available.
 function tes3ui.showJournal() end
 
+--- This function opens the magic select menu, which lets the player select a spell or enchanted item. This is originally used by the quick key menu. The spells or enchanted items are taken from the player's spell list and inventory. The selected spell or item can be retrieved in the function assigned to `callback`.
+--- @param params tes3ui.showMagicSelectMenu.params This table accepts the following values:
+--- 
+--- `title`: string — The text used for the title of the magic select menu.
+--- 
+--- `selectSpells`: boolean? — *Default*: `true`. If spells are included in the selection list.
+--- 
+--- `selectPowers`: boolean? — *Default*: `true`. If powers are included in the selection list.
+--- 
+--- `selectEnchanted`: boolean? — *Default*: `true`. If enchanted items are included in the selection list.
+--- 
+--- `callback`: function? — *Optional*. A function which will be called once the magic select menu has been closed, including when no item has been selected. A table `callbackParams` will be passed to this function.
+--- --- 		- `callbackParams` (table)
+--- --- 			- `spell` ([tes3spell](https://mwse.github.io/MWSE/types/tes3spell/)): The spell or power that has been selected. Can be `nil`.
+--- --- 			- `item` ([tes3item](https://mwse.github.io/MWSE/types/tes3item/)): The enchanted item that has been selected. The actual magic will be `item.enchantment`. Can be `nil`.
+--- --- 			- `itemData` ([tes3itemData](https://mwse.github.io/MWSE/types/tes3itemData/)): The item data of the enchanted item that has been selected. Fully recharged items may not have itemData. Can be `nil`.
+--- --- 
+function tes3ui.showMagicSelectMenu(params) end
+
+---Table parameter definitions for `tes3ui.showMagicSelectMenu`.
+--- @class tes3ui.showMagicSelectMenu.params
+--- @field title string The text used for the title of the magic select menu.
+--- @field selectSpells boolean? *Default*: `true`. If spells are included in the selection list.
+--- @field selectPowers boolean? *Default*: `true`. If powers are included in the selection list.
+--- @field selectEnchanted boolean? *Default*: `true`. If enchanted items are included in the selection list.
+--- @field callback function? *Optional*. A function which will be called once the magic select menu has been closed, including when no item has been selected. A table `callbackParams` will be passed to this function.
+--- 		- `callbackParams` (table)
+--- 			- `spell` ([tes3spell](https://mwse.github.io/MWSE/types/tes3spell/)): The spell or power that has been selected. Can be `nil`.
+--- 			- `item` ([tes3item](https://mwse.github.io/MWSE/types/tes3item/)): The enchanted item that has been selected. The actual magic will be `item.enchantment`. Can be `nil`.
+--- 			- `itemData` ([tes3itemData](https://mwse.github.io/MWSE/types/tes3itemData/)): The item data of the enchanted item that has been selected. Fully recharged items may not have itemData. Can be `nil`.
+--- 
+
 --- Displays a message box. This may be a simple toast-style message, or a box with choice buttons.
 --- @param params tes3ui.showMessageMenu.params This table accepts the following values:
 --- 
@@ -364,7 +396,7 @@ function tes3ui.showMessageMenu(params) end
 
 --- Creates a new notify menu with a formatted string. A notify menu is a toast-style display that shows at the bottom of the screen. It will expire after an amount of time, determined by the length of the message and the `fMessageTimePerChar` GMST.
 --- @param string string The message to display. If it supports formatting, additional arguments are used.
---- @param ... any? Optional values to feed to formatting found in the first parameter.
+--- @param ... any? *Optional*. Formatting arguments. These are passed to `string.format`.
 --- @return tes3uiElement menu The notify menu created.
 function tes3ui.showNotifyMenu(string, ...) end
 

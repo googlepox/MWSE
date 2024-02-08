@@ -39,7 +39,7 @@
 --- @field movementRootNode niBillboardNode|niCollisionSwitch|niNode|niSortAdjustNode|niSwitchNode Easy access to the actor's "MRT" movement root node.
 --- @field movementSpeed number *Read-only*. The animation speed multiplier of movement animations. This includes walking, running, crouching, swimming, turning, jumping and other movement related animations.
 --- @field nextLoopCounts number 
---- @field positionDeltaOfMovementRoot tes3vector3 Tracks the change from the last frame of the "MRT" child node that controls animation driven movement.
+--- @field positionDeltaMovementRoot tes3vector3 Tracks the change from the last frame of the "MRT" child node that controls animation driven movement.
 --- @field spine1Node niBillboardNode|niCollisionSwitch|niNode|niSortAdjustNode|niSwitchNode 
 --- @field spine2Node niBillboardNode|niCollisionSwitch|niNode|niSortAdjustNode|niSwitchNode 
 --- @field spineAngle number 

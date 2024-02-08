@@ -213,6 +213,10 @@ namespace TES3 {
 		return baseNPC->faction;
 	}
 
+	unsigned char NPCInstance::getBaseFactionRank() {
+		return baseNPC->factionRank;
+	}
+
 	Race* NPCInstance::getBaseRace() {
 		return baseNPC->race;
 	}

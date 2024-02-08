@@ -126,11 +126,4 @@ function Dropdown:createOuterContainer(parentBlock)
 	self.elements.outerContainer.paddingRight = self.indent -- * 2
 end
 
---- @param parentBlock tes3uiElement
-function Dropdown:createContentsContainer(parentBlock)
-	self:createLabel(parentBlock)
-	self:createInnerContainer(parentBlock)
-	self:makeComponent(self.elements.innerContainer)
-end
-
 return Dropdown

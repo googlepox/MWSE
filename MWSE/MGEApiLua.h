@@ -23,10 +23,6 @@ namespace mge::lua {
 
 		// API v2+ for following functions
 		static void saveScreenshot(sol::optional<sol::table> params);
-
-		// API v3+ for following functions
-		static float getNearRenderDistance();
-		static void setNearRenderDistance(float distance);
 	};
 
 	class CameraConfig {
@@ -49,6 +45,10 @@ namespace mge::lua {
 		static void setCameraShakeMagnitude(float value);
 		static float getCameraShakeAcceleration();
 		static void setCameraShakeAcceleration(float value);
+
+		// API v3+ for following functions
+		static float getNearRenderDistance();
+		static void setNearRenderDistance(float distance);
 	};
 
 	class RenderFeatures {

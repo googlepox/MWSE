@@ -63,7 +63,9 @@
 --- - `1` Combat music
 --- - `2` Main menu music
 --- 
---- Note: These values are available as [`tes3.musicSituation`](https://mwse.github.io/MWSE/references/music-situations/) constants.
+--- !!! tip 
+--- 	These values are available via the [`tes3.musicSituation`](https://mwse.github.io/MWSE/references/music-situations/) constants.
+--- 
 --- @field nodeCursor niBillboardNode|niCollisionSwitch|niNode|niSortAdjustNode|niSwitchNode *Read-only*. The scenegraph node for the target crosshair.
 --- @field parentWindowHandle HWND *Read-only*. Handle to the parent window.
 --- @field projectionDistance number 
