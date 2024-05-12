@@ -482,7 +482,8 @@ namespace se::cs::dialog::dialogue_window {
 		const auto filterScript = (userData && userData->currentFilterObject) ? userData->currentFilterObject->getScript() : nullptr;
 
 		// We only care if we are filtering for local variables, and have a script.
-		if (filterScript == nullptr || (conditionType != DialogueInfo::Condition::TypeLocal && conditionType != DialogueInfo::Condition::TypeNotLocal)) {
+		// Not Local conditions should not be filtered.
+		if (filterScript == nullptr || conditionType != DialogueInfo::Condition::TypeLocal) {
 			CS_FillConditionCombos(hWnd, controlIdOffset, conditionType);
 			return;
 		}

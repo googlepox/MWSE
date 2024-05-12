@@ -35,11 +35,28 @@ The same is done by this function if you pass both `parent` and `data` arguments
 				{ name = "childIndent", type = "integer", optional = true, description = "The left padding size in pixels. Used on all the child components." },
 				{ name = "paddingBottom", type = "integer", optional = true, default = 4, description = "The bottom border size in pixels. Only used if the `childSpacing` is unset on the parent component." },
 				{ name = "childSpacing", type = "integer", optional = true, description = "The bottom border size in pixels. Used on all the child components." },
+				{ name = "convertToLabelValue", type = "fun(self: mwseMCMSlider, variableValue: number): number|string", optional = true, description = "Define a custom formatting function for displaying variable values." },
 				{ name = "postCreate", type = "fun(self: mwseMCMSlider)", optional = true, description = "Can define a custom formatting function to make adjustments to any element saved in `self.elements`." },
 			}
 		}
 	},
 	returns = {{
 		name = "slider", type = "mwseMCMSlider"
-	}}
+	}},
+	examples = {
+		["..\\..\\..\\..\\namedTypes\\mwseMCMCategory\\createSlider\\DecimalSlider"] = {
+			title = "DecimalSlider",
+			description = "The following example shows how to create a slider that keeps the variable value a floating point number with precision of 2 decimal places."
+		},
+		["..\\..\\..\\..\\namedTypes\\mwseMCMSlider\\convertToLabelValue\\DistanceSlider"] = {
+			title = "DistanceSlider",
+			description = "The following example shows how the `convertToLabelValue` parameter can be used to create a slider for a config setting that handles distances. \z
+				The config setting will be stored using game units, but the displayed value will be in real-world units. Recall that 1 game unit corresponds to 22.1 feet, and 1 foot is 0.3048 meters."
+		},
+		["..\\..\\..\\..\\namedTypes\\mwseMCMSlider\\convertToLabelValue\\SkillSlider"] = {
+			title = "SkillSlider",
+			description = "Here is an (admittedly less practical) example to help highlight the different ways `convertToLabelValue` can be used. \z
+				In this example, it will be used to create a slider that stores a `tes3.skill` constant in the config, and then displays the name of the corresponding skill."
+		},
+	},
 }

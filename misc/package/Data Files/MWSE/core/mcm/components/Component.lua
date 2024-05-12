@@ -6,6 +6,13 @@
 --- The warnings arise because each field set here is also 'set' in the annotations in the core\meta\ folder.
 --- @diagnostic disable: duplicate-set-field
 
+-- MCM Components can't be used before "initialized" event as they read GMST values.
+if not tes3.isInitialized() then
+	error(debug.traceback(
+		"Trying to use an MCM Component before \"modConfigReady\" event triggered!"
+	))
+end
+
 --- @class mwseMCMComponent
 local Component = {}
 Component.componentType = "Component"
@@ -15,6 +22,8 @@ Component.sOK = tes3.findGMST(tes3.gmst.sOK).value --[[@as string]]
 Component.sCancel = tes3.findGMST(tes3.gmst.sCancel).value --[[@as string]]
 Component.sYes = tes3.findGMST(tes3.gmst.sYes).value --[[@as string]]
 Component.sNo = tes3.findGMST(tes3.gmst.sNo).value --[[@as string]]
+Component.sOn = tes3.findGMST(tes3.gmst.sOn).value --[[@as string]]
+Component.sOff = tes3.findGMST(tes3.gmst.sOff).value --[[@as string]]
 
 -- CONTROL METHODS
 

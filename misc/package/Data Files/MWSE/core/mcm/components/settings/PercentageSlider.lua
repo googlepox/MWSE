@@ -12,7 +12,7 @@ local Parent = require("mcm.components.settings.Slider")
 
 
 
---- @class mwseMCMPercentageSlider : mwseMCMSlider
+--- @class mwseMCMPercentageSlider
 local PercentageSlider = Parent:new()
 
 PercentageSlider.min = 0.0
@@ -24,21 +24,11 @@ function PercentageSlider:convertToWidgetValue(variableValue)
 	return (variableValue - self.min) * 10 ^ (2 + self.decimalPlaces)
 end
 
-function PercentageSlider:updateValueLabel()
-	local labelElement = self.elements.label
-	local percentageValue = 100 * self.variable.value
-	if string.find(self.label, "%s", 1, true) then
-		labelElement.text = string.format(self.label, percentageValue)
-	else
-		local s = "%s: %i%%"
-		-- only include decimal places when we're supposed to
-		if self.decimalPlaces > 0 then
-			-- so sorry that anyone has to look at this
-			-- this will simplify to "%s: %.1f%%" (in the case where `decimalPlaces` == 1)
-			s = string.format("%%s: %%.%uf%%%%", self.decimalPlaces)
-		end
-		labelElement.text = s:format(self.label, percentageValue)
+function PercentageSlider:convertToLabelValue(variableValue)
+	if self.decimalPlaces == 0 then
+		return (100 * variableValue) .. "%"
 	end
+	return string.format(table.concat{"%.", self.decimalPlaces, "f%%"}, 100 * variableValue)
 end
 
 return PercentageSlider

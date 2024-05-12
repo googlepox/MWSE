@@ -3675,7 +3675,7 @@ namespace mwse::lua {
 					fromActor->inventory.removeItemWithData(fromMobile, item, nullptr, amountToTransfer, false);
 
 					// Check for ammunition and thrown weapons, as unlike other equipment, they do not generate itemData when equipped.
-					if (!fromIsContainer && (item->objectType == TES3::ObjectType::Ammo || item->objectType == TES3::ObjectType::Weapon)) {
+					if (!fromIsContainer && item->isWeaponOrAmmo() && static_cast<TES3::Weapon*>(item)->isProjectile()) {
 						fromActor->unequipItem(item, true, fromMobile, false, nullptr);
 					}
 

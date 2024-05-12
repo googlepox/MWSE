@@ -1,5 +1,6 @@
 return {
 	type = "function",
+	deprecated = true,
 	description = [[Creates a new DecimalSlider inside given `parent` menu.
 
 The canonical way to use this function is to pass a `parent` and `data` arguments. If passing only `data` table, DecimalSlider's UI element tree won't be created. To do so, use DecimalSlider's `create` method:
@@ -35,6 +36,7 @@ The same is done by this function if you pass both `parent` and `data` arguments
 				{ name = "childIndent", type = "integer", optional = true, description = "The left padding size in pixels. Used on all the child components." },
 				{ name = "paddingBottom", type = "integer", optional = true, default = 4, description = "The bottom border size in pixels. Only used if the `childSpacing` is unset on the parent component." },
 				{ name = "childSpacing", type = "integer", optional = true, description = "The bottom border size in pixels. Used on all the child components." },
+				{ name = "convertToLabelValue", type = "fun(self: mwseMCMDecimalSlider, variableValue: number): number|string", optional = true, description = "Define a custom formatting function for displaying variable values." },
 				{ name = "postCreate", type = "fun(self: mwseMCMDecimalSlider)", optional = true, description = "Can define a custom formatting function to make adjustments to any element saved in `self.elements`." },
 			}
 		}

@@ -263,6 +263,7 @@ function mwse.mcm.createCycleButton(parent, data) end
 --- 
 --- The same is done by this function if you pass both `parent` and `data` arguments.
 --- 
+--- @deprecated
 --- @param parent tes3uiElement|mwse.mcm.createDecimalSlider.data The UI element inside which the new DecimalSlider will be created.
 --- @param data mwse.mcm.createDecimalSlider.data? This table accepts the following values:
 --- 
@@ -300,6 +301,8 @@ function mwse.mcm.createCycleButton(parent, data) end
 --- 
 --- `childSpacing`: integer? — *Optional*. The bottom border size in pixels. Used on all the child components.
 --- 
+--- `convertToLabelValue`: nil|fun(self: mwseMCMDecimalSlider, variableValue: number): number|string — *Optional*. Define a custom formatting function for displaying variable values.
+--- 
 --- `postCreate`: nil|fun(self: mwseMCMDecimalSlider) — *Optional*. Can define a custom formatting function to make adjustments to any element saved in `self.elements`.
 --- @return mwseMCMDecimalSlider slider No description yet available.
 function mwse.mcm.createDecimalSlider(parent, data) end
@@ -323,6 +326,7 @@ function mwse.mcm.createDecimalSlider(parent, data) end
 --- @field childIndent integer? *Optional*. The left padding size in pixels. Used on all the child components.
 --- @field paddingBottom integer? *Default*: `4`. The bottom border size in pixels. Only used if the `childSpacing` is unset on the parent component.
 --- @field childSpacing integer? *Optional*. The bottom border size in pixels. Used on all the child components.
+--- @field convertToLabelValue nil|fun(self: mwseMCMDecimalSlider, variableValue: number): number|string *Optional*. Define a custom formatting function for displaying variable values.
 --- @field postCreate nil|fun(self: mwseMCMDecimalSlider) *Optional*. Can define a custom formatting function to make adjustments to any element saved in `self.elements`.
 
 --- Creates a new Dropdown inside given `parent` menu.
@@ -822,6 +826,8 @@ function mwse.mcm.createParagraphField(parent, data) end
 --- 
 --- `childSpacing`: integer? — *Optional*. The bottom border size in pixels. Used on all the child components.
 --- 
+--- `convertToLabelValue`: nil|fun(self: mwseMCMPercentageSlider, variableValue: number): number|string — *Optional*. Define a custom formatting function for displaying variable values.
+--- 
 --- `postCreate`: nil|fun(self: mwseMCMPercentageSlider) — *Optional*. Can define a custom formatting function to make adjustments to any element saved in `self.elements`.
 --- @return mwseMCMPercentageSlider slider No description yet available.
 function mwse.mcm.createPercentageSlider(parent, data) end
@@ -845,6 +851,7 @@ function mwse.mcm.createPercentageSlider(parent, data) end
 --- @field childIndent integer? *Optional*. The left padding size in pixels. Used on all the child components.
 --- @field paddingBottom integer? *Default*: `4`. The bottom border size in pixels. Only used if the `childSpacing` is unset on the parent component.
 --- @field childSpacing integer? *Optional*. The bottom border size in pixels. Used on all the child components.
+--- @field convertToLabelValue nil|fun(self: mwseMCMPercentageSlider, variableValue: number): number|string *Optional*. Define a custom formatting function for displaying variable values.
 --- @field postCreate nil|fun(self: mwseMCMPercentageSlider) *Optional*. Can define a custom formatting function to make adjustments to any element saved in `self.elements`.
 
 --- Creates a new PlayerData variable.
@@ -884,6 +891,8 @@ function mwse.mcm.createPlayerData(variable) end
 --- 
 --- The same is done by this function if you pass both `parent` and `data` arguments.
 --- 
+---
+--- [Examples available in online documentation](https://mwse.github.io/MWSE/apis/mwse.mcm/#mwsemcmcreateslider).
 --- @param parent tes3uiElement|mwse.mcm.createSlider.data The UI element inside which the new Slider will be created.
 --- @param data mwse.mcm.createSlider.data? This table accepts the following values:
 --- 
@@ -921,8 +930,10 @@ function mwse.mcm.createPlayerData(variable) end
 --- 
 --- `childSpacing`: integer? — *Optional*. The bottom border size in pixels. Used on all the child components.
 --- 
+--- `convertToLabelValue`: nil|fun(self: mwseMCMSlider, variableValue: number): number|string — *Optional*. Define a custom formatting function for displaying variable values.
+--- 
 --- `postCreate`: nil|fun(self: mwseMCMSlider) — *Optional*. Can define a custom formatting function to make adjustments to any element saved in `self.elements`.
---- @return mwseMCMDecimalSlider|mwseMCMPercentageSlider|mwseMCMSlider slider No description yet available.
+--- @return mwseMCMPercentageSlider|mwseMCMSlider slider No description yet available.
 function mwse.mcm.createSlider(parent, data) end
 
 ---Table parameter definitions for `mwse.mcm.createSlider`.
@@ -944,12 +955,13 @@ function mwse.mcm.createSlider(parent, data) end
 --- @field childIndent integer? *Optional*. The left padding size in pixels. Used on all the child components.
 --- @field paddingBottom integer? *Default*: `4`. The bottom border size in pixels. Only used if the `childSpacing` is unset on the parent component.
 --- @field childSpacing integer? *Optional*. The bottom border size in pixels. Used on all the child components.
+--- @field convertToLabelValue nil|fun(self: mwseMCMSlider, variableValue: number): number|string *Optional*. Define a custom formatting function for displaying variable values.
 --- @field postCreate nil|fun(self: mwseMCMSlider) *Optional*. Can define a custom formatting function to make adjustments to any element saved in `self.elements`.
 
 --- Creates a new TableVariable.
 --- @param variable mwse.mcm.createTableVariable.variable This table accepts the following values:
 --- 
---- `id`: string — Key in the config file used to store the variable.
+--- `id`: string|number — Key in the config file used to store the variable.
 --- 
 --- `table`: table — The table to save the data to.
 --- 
@@ -967,7 +979,7 @@ function mwse.mcm.createTableVariable(variable) end
 
 ---Table parameter definitions for `mwse.mcm.createTableVariable`.
 --- @class mwse.mcm.createTableVariable.variable
---- @field id string Key in the config file used to store the variable.
+--- @field id string|number Key in the config file used to store the variable.
 --- @field table table The table to save the data to.
 --- @field defaultSetting unknown? *Optional*. If `id` does not exist in the table, it will be initialised to this value.
 --- @field inGameOnly boolean? *Default*: `false`. If true, the setting containing this variable will be disabled if the game is on main menu.
@@ -985,6 +997,10 @@ function mwse.mcm.createTableVariable(variable) end
 --- `headerImagePath`: string? — *Optional*. Set it to display an image at the top of your menu. Path is relative to `Data Files/`. The image must have power-of-2 dimensions (i.e. 16, 32, 64, 128, 256, 512, 1024, etc.).
 --- 
 --- `onClose`: nil|fun(modConfigContainer: tes3uiElement) — *Optional*. Set this to a function which will be called when the menu is closed. Useful for saving variables, such as TableVariable.
+--- 
+--- `searchChildLabels`: boolean? — *Default*: `true`. If true, default search handler will search through all the page and setting `label` and `text` fields in this MCM template.
+--- 
+--- `searchChildDescriptions`: boolean? — *Default*: `true`. If true, default search handler will search through all the page and setting `description` fields in this MCM template.
 --- 
 --- `onSearch`: nil|fun(searchText: string): boolean — *Optional*. A custom search handler function. This function should return true if this mod Template should show up in search results for given `searchText`.
 --- 
@@ -1010,6 +1026,8 @@ function mwse.mcm.createTemplate(data) end
 --- @field label string? *Optional*. Used in place of `name` if that argument isn't passed. You need to pass at least one of the `name` and `label` arguments. If `headerImagePath` is not passed, a UI element will be created with `label` as text.
 --- @field headerImagePath string? *Optional*. Set it to display an image at the top of your menu. Path is relative to `Data Files/`. The image must have power-of-2 dimensions (i.e. 16, 32, 64, 128, 256, 512, 1024, etc.).
 --- @field onClose nil|fun(modConfigContainer: tes3uiElement) *Optional*. Set this to a function which will be called when the menu is closed. Useful for saving variables, such as TableVariable.
+--- @field searchChildLabels boolean? *Default*: `true`. If true, default search handler will search through all the page and setting `label` and `text` fields in this MCM template.
+--- @field searchChildDescriptions boolean? *Default*: `true`. If true, default search handler will search through all the page and setting `description` fields in this MCM template.
 --- @field onSearch nil|fun(searchText: string): boolean *Optional*. A custom search handler function. This function should return true if this mod Template should show up in search results for given `searchText`.
 --- @field pages mwseMCMPage.new.data[]? *Optional*. You can create pages for the template directly here. The entries in the array must specify the class of the page.
 --- @field indent integer? *Default*: `12`. The left padding size in pixels. Only used if the `childIndent` isn't set on the parent component.

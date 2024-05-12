@@ -222,7 +222,7 @@ local i18n = mwse.loadTranslations(mod)
 
 **Returns**:
 
-* `i18n` (fun(key: string, data: any?): string): The callable translation results.
+* `i18n` (fun(key: string, data: any): string): The callable translation results.
 
 ***
 
@@ -268,7 +268,7 @@ local result = mwse.longToString(type)
 
 Configures MWSE to execute a given function instead when a script would run.
 
-In most cases its intended to stop the execution of the original mwscript script. You can do so in the callback function by calling `mwscript.stopScript()`.
+In most cases its intended to stop the execution of the original global mwscript. You can do so in the callback function by calling `mwscript.stopScript()`.
 
 ```lua
 local success = mwse.overrideScript(scriptId, callback)
@@ -305,7 +305,7 @@ local success = mwse.overrideScript(scriptId, callback)
 	
 	local function raceCheck()
 		-- It's almost always the desired behavior to stop the mwscript,
-		-- since we are overriding the it.
+		-- since we are overriding it.
 		---@diagnostic disable-next-line: deprecated
 		mwscript.stopScript({ script = raceCheckScriptID })
 	
@@ -356,7 +356,7 @@ mwse.saveConfig(fileName, config, jsonOptions)
 
 * `fileName` (string): Usually named after your mod.
 * `config` (table): The config table to save.
-* `jsonOptions` (table): *Optional*. Used to optionally pass encoding options to the dkjson encoder.
+* `jsonOptions` (table): *Optional*. Encoding options. These get passed to the `dkjson` encoder.
 
 ***
 

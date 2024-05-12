@@ -13,7 +13,7 @@ The `tes3ui` library provides access to manipulating the game's GUI.
 ### `tes3ui.acquireTextInput`
 <div class="search_terms" style="display: none">acquiretextinput</div>
 
-Sends all text input to the specified element.  Calling this function with a nil argument will release text input and allow keybinds to work. Suppresses most keybinds while active, except the Journal open/close keybind (it's up to the individual menu implementation).
+Sends all text input to the specified element. Calling this function with a nil argument will release text input and allow keybinds to work. Suppresses most keybinds while active, except the Journal open/close keybind (it's up to the individual menu implementation).
 
 Only one element can have control of input, and there is no automatic restoration of control if one element takes control from another. Be careful of conflicts with other users of this function.
 
@@ -67,7 +67,7 @@ tes3ui.captureMouseDrag(capture)
 ### `tes3ui.choice`
 <div class="search_terms" style="display: none">choice</div>
 
-Creates a simple dialogue choice, as per the `Choice` mwscript function.
+Creates a simple dialogue choice, as per the `Choice` mwscript function. To add more options call this function multiple times.
 
 ```lua
 tes3ui.choice(text, index)
@@ -734,7 +734,7 @@ tes3ui.showInventorySelectMenu({ reference = ..., title = ..., leaveMenuMode = .
 	* `leaveMenuMode` (boolean): *Optional*. Determines if menu mode should be exited after closing the inventory select menu. By default, it will be in the state it was in before this function was called.
 	* `noResultsText` (string): *Optional*. The text used for the message that gets shown to the player if no items have been found in the inventory. The default text is equivalent to the `sInventorySelectNoItems` GMST value, unless `"ingredients"` or `"soulgemFilled"` has been assigned to `filter`, in which case the default text is equivalent to either the `sInventorySelectNoIngredients` or `sInventorySelectNoSoul` GMST value respectively.
 	* `noResultsCallback` (function): *Optional*. A function which is called when no items have been found in the inventory, right before the message containing `noResultsText` is shown.
-	* `filter` (function, string): *Optional*. This determines which items should be shown in the inventory select menu. Accepts either a string or a function.
+	* `filter` (string, fun(params: [tes3ui.showInventorySelectMenu.filterParams](../types/tes3ui.showInventorySelectMenu.filterParams.md)): boolean): *Optional*. This determines which items should be shown in the inventory select menu. Accepts either a string or a function.
 
 		If assigning a string, the available values are present in [`tes3.inventorySelectFilter`](https://mwse.github.io/MWSE/references/inventory-select-filters/) namespace. The available filters are:
 
@@ -747,20 +747,8 @@ tes3ui.showInventorySelectMenu({ reference = ..., title = ..., leaveMenuMode = .
 		- `retort`: Only [tes3apparatus](https://mwse.github.io/MWSE/types/tes3apparatus/) items of type `tes3.apparatusType.retort` will be shown.
 		- `soulgemFilled`: Only filled soulgems will be shown.
 
-		If assigning a function it will be called when determining if an item should be added to the inventory select menu. A table `filterParams` will be passed to this function. Returning `true` from this function will add the item to the inventory select menu, whereas returning `false` will prevent it from being added.
-
-		- `filterParams` (table)
-			- `item` ([tes3item](https://mwse.github.io/MWSE/types/tes3item/)): The item that is being filtered.
-			- `itemData` ([tes3itemData](https://mwse.github.io/MWSE/types/tes3itemData/)): The item data of the item that is being filtered. Can be `nil`.
-
-	* `callback` (function): *Optional*. A function which will be called once the inventory select menu has been closed, including when no item has been selected. A table `callbackParams` will be passed to this function.
-		- `callbackParams` (table)
-			- `item` ([tes3item](https://mwse.github.io/MWSE/types/tes3item/)): The item that has been selected. Can be `nil`.
-			- `itemData` ([tes3itemData](https://mwse.github.io/MWSE/types/tes3itemData/)): The item data of the item that has been selected. Can be `nil`.
-			- `count` (number): The number of items that have been selected. Only valid if `item` is not `nil`.
-			- `inventory` ([tes3inventory](https://mwse.github.io/MWSE/types/tes3inventory/)): The inventory containing the items.
-			- `actor` ([tes3actor](https://mwse.github.io/MWSE/types/tes3actor/)): The actor containing the inventory.
-
+		If assigning a custom function it will be called when determining if an item should be added to the inventory select menu. Returning `true` from this function will add the item to the inventory select menu, whereas returning `false` will prevent it from being added.
+	* `callback` (fun(params: [tes3ui.showInventorySelectMenu.callbackParams](../types/tes3ui.showInventorySelectMenu.callbackParams.md))): *Optional*. A function which will be called once the inventory select menu has been closed, including when no item has been selected.
 
 ??? example "Example: Bribe an NPC with items from your inventory"
 
@@ -903,7 +891,7 @@ tes3ui.showMagicSelectMenu({ title = ..., selectSpells = ..., selectPowers = ...
 	* `selectSpells` (boolean): *Default*: `true`. If spells are included in the selection list.
 	* `selectPowers` (boolean): *Default*: `true`. If powers are included in the selection list.
 	* `selectEnchanted` (boolean): *Default*: `true`. If enchanted items are included in the selection list.
-	* `callback` (function): *Optional*. A function which will be called once the magic select menu has been closed, including when no item has been selected. A table `callbackParams` will be passed to this function.
+	* `callback` (fun(params: [tes3ui.showMagicSelectMenu.callbackParams](../types/tes3ui.showMagicSelectMenu.callbackParams.md))): *Optional*. A function which will be called once the magic select menu has been closed, including when no item or spell has been selected. A table `callbackParams` will be passed to this function.
 		- `callbackParams` (table)
 			- `spell` ([tes3spell](https://mwse.github.io/MWSE/types/tes3spell/)): The spell or power that has been selected. Can be `nil`.
 			- `item` ([tes3item](https://mwse.github.io/MWSE/types/tes3item/)): The enchanted item that has been selected. The actual magic will be `item.enchantment`. Can be `nil`.
@@ -918,13 +906,14 @@ tes3ui.showMagicSelectMenu({ title = ..., selectSpells = ..., selectPowers = ...
 Displays a message box. This may be a simple toast-style message, or a box with choice buttons.
 
 ```lua
-tes3ui.showMessageMenu({ id = ..., buttons = ..., callbackParams = ..., cancels = ..., cancelText = ..., cancelCallback = ..., header = ..., message = ..., customBlock = ..., page = ..., pageSize = ... })
+tes3ui.showMessageMenu({ id = ..., leaveMenuMode = ..., buttons = ..., callbackParams = ..., cancels = ..., cancelText = ..., cancelCallback = ..., header = ..., message = ..., customBlock = ..., page = ..., pageSize = ... })
 ```
 
 **Parameters**:
 
 * `params` (table)
 	* `id` (string): *Default*: `MenuMessage`. The menu ID of the message menu.
+	* `leaveMenuMode` (boolean): *Default*: `true`. Determines if menu mode should be exited after a choice is made. By default it will exit menu mode, for backwards compatibility with existing mods.
 	* `buttons` ([tes3ui.showMessageMenu.params.button](../types/tes3ui.showMessageMenu.params.button.md)[]): **Required** The list of buttons.
 	* `callbackParams` (table): *Optional*. The table of parameters to pass to the callback functions.
 	* `cancels` (boolean): *Default*: `false`. When set to true, a cancel button is automatically added to the buttom of the list, even when paginated.
@@ -996,6 +985,75 @@ tes3ui.suppressTooltip(suppress)
 **Parameters**:
 
 * `suppress` (boolean): Turns on suppression if true, immediately hiding any active tooltip and further world object tooltips. Turns off suppression if false.
+
+***
+
+### `tes3ui.textLayout.getFontHeight`
+<div class="search_terms" style="display: none">textlayout.getfontheight</div>
+
+Gets font height metrics for a font.
+
+```lua
+local maxGlyphHeight, lineHeight = tes3ui.textLayout.getFontHeight({ font = ... })
+```
+
+**Parameters**:
+
+* `params` (table)
+	* `font` (number): *Default*: `0`. The index of the font.
+
+**Returns**:
+
+* `maxGlyphHeight` (number): Maximum pixel height of a single line of text.
+* `lineHeight` (number): Pixel spacing between lines in a paragraph.
+
+***
+
+### `tes3ui.textLayout.getTextExtent`
+<div class="search_terms" style="display: none">textlayout.gettextextent</div>
+
+Calculates expected size information for text content.
+
+```lua
+local width, height, verticalAdvance = tes3ui.textLayout.getTextExtent({ text = ..., font = ..., firstLineOnly = ... })
+```
+
+**Parameters**:
+
+* `params` (table)
+	* `text` (string): The text to use.
+	* `font` (number): *Default*: `0`. The index of the font.
+	* `firstLineOnly` (boolean): *Default*: `false`. Only process the first line of the text.
+
+**Returns**:
+
+* `width` (number): Pixel width of the widest line of the text.
+* `height` (number): Pixel height of a label containing this text. Includes the extra space and rounding added by the label layout.
+* `verticalAdvance` (number): The vertical displacement that a following text element would use. It is zero for text without newlines, and increases with each newline.
+
+***
+
+### `tes3ui.textLayout.wrapText`
+<div class="search_terms" style="display: none">textlayout.wraptext</div>
+
+Performs word wrapping of text.
+
+```lua
+local wrappedText, lineCount = tes3ui.textLayout.wrapText({ text = ..., font = ..., maxWidth = ..., ignoreLinkDelimiters = ... })
+```
+
+**Parameters**:
+
+* `params` (table)
+	* `text` (string): The text to wrap.
+	* `font` (number): *Default*: `0`. The index of the font.
+	* `maxWidth` (number): *Default*: `-1`. The wrapping width in pixels.
+	* `ignoreLinkDelimiters` (boolean): *Default*: `false`.
+
+**Returns**:
+
+* `wrappedText` (string): The wrapped text, with `\n` as line breaks.
+* `lineCount` (number): The number of lines in the output wrapped text.
 
 ***
 

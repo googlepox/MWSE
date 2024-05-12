@@ -47,7 +47,7 @@ The bottom border size in pixels. Used on all the child components.
 ### `class`
 <div class="search_terms" style="display: none">class</div>
 
-
+Every MCM component has a unique string indentifier specific to that component. These strings are the filename of the file implementing a component. These are found in `core\\mcm\\components`.
 
 **Returns**:
 
@@ -124,18 +124,7 @@ The left padding size in pixels. Only used if the `childIndent` isn't set on the
 ### `inGameOnly`
 <div class="search_terms" style="display: none">ingameonly</div>
 
-Used only on components without a variable. For components with a variable, the variable's `inGameOnly` field is used. For more info see [checkDisabled](./mwseMCMComponent.md#checkdisabled).
-
-**Returns**:
-
-* `result` (boolean)
-
-***
-
-### `inGameOnly `
-<div class="search_terms" style="display: none">ingameonly </div>
-
-If true, the setting is disabled while the game is on main menu.
+If true, the setting is disabled while the game is on main menu. If this is enabled, it will override the value of the `inGameOnly` parameter on this setting's `variable`.
 
 **Returns**:
 
@@ -201,7 +190,7 @@ Minimum value of slider. Default is `0`.
 ### `mouseOvers`
 <div class="search_terms" style="display: none">mouseovers</div>
 
-This array of UI elements will have an event handler registered to trigger "MCM:MouseOver" event. For more info, see [registerMouseOverElements]() method.
+This array of UI elements will have an event handler registered to trigger "MCM:MouseOver" event. For more info, see [registerMouseOverElements](#registermouseoverelements) method.
 
 **Returns**:
 
@@ -286,10 +275,32 @@ Set to the value of `sNo` GMST.
 
 ***
 
+### `sOff`
+<div class="search_terms" style="display: none">soff</div>
+
+Set to the value of `sOff` GMST.
+
+**Returns**:
+
+* `result` (string)
+
+***
+
 ### `sOK`
 <div class="search_terms" style="display: none">sok</div>
 
 Set to the value of `sOK` GMST.
+
+**Returns**:
+
+* `result` (string)
+
+***
+
+### `sOn`
+<div class="search_terms" style="display: none">son</div>
+
+Set to the value of `sOn` GMST.
 
 **Returns**:
 
@@ -353,6 +364,83 @@ local result = myObject:checkDisabled()
 **Returns**:
 
 * `result` (boolean)
+
+***
+
+### `convertToLabelValue`
+<div class="search_terms" style="display: none">converttolabelvalue</div>
+
+This function specifies how values stored in the `variable` field should correspond to values displayed in the slider label.
+The default behavior is to consistently format decimal places (i.e., if `decimalPlaces == 2`, make sure two decimal places are shown.)
+This can be overwritten in the `createNewSlider` method, allowing for custom formatting of variable values.
+
+```lua
+local labelValue = myObject:convertToLabelValue(variableValue)
+```
+
+**Parameters**:
+
+* `variableValue` (number)
+
+**Returns**:
+
+* `labelValue` (number, string)
+
+??? example "Example: DistanceSlider"
+
+	The following example shows how the `convertToLabelValue` parameter can be used to create a slider for a config setting that handles distances. The config setting will be stored using game units, but the displayed value will be in real-world units. Recall that 1 game unit corresponds to 22.1 feet, and 1 foot is 0.3048 meters.
+
+	```lua
+	--- @type tes3uiElement, table
+	local myPage, myConfig
+	mwse.mcm.createSlider{
+		parent = myPage,
+		label = "My distance slider",
+		variable = mwse.mcm.createTableVariable{ id = "distance", table = myConfig },
+		convertToLabelValue = function(self, variableValue)
+			local feet = variableValue / 22.1
+			local meters = 0.3048 * feet
+			if self.decimalPlaces == 0 then
+				return string.format("%i ft (%.2f m)", feet, meters)
+			end
+			return string.format(
+				-- if `decimalPlaces == 1, then this string will simplify to
+				-- "%.1f ft (%.3f m)"
+				string.format("%%.%uf ft (%%.%uf m)", self.decimalPlaces, self.decimalPlaces + 2),
+				feet, meters
+			)
+		end,
+	
+		max = 22.1 * 10,    -- max is 10 feet
+		step = 22.1,        -- increment by 1 foot
+		jump = 22.1 * 5,
+	}
+
+	```
+
+??? example "Example: SkillSlider"
+
+	Here is an (admittedly less practical) example to help highlight the different ways `convertToLabelValue` can be used. In this example, it will be used to create a slider that stores a `tes3.skill` constant in the config, and then displays the name of the corresponding skill.
+
+	```lua
+	--- @type tes3uiElement, table
+	local myPage, myConfig
+	mwse.mcm.createSlider{
+		parent = myPage,
+		label = "My skill slider",
+		variable = mwse.mcm.createTableVariable{ id = "skillId", table = myConfig },
+		convertToLabelValue = function(self, variableValue)
+			local skillName = tes3.getSkillName(math.round(variableValue))
+			if skillName then
+				return skillName
+			end
+			return "N/A"
+		end,
+	
+		max = 26 -- there are 27 skills and indexing starts at 0
+	}
+
+	```
 
 ***
 
@@ -566,6 +654,21 @@ local component = myObject:getComponent({ class = ..., label = ..., indent = ...
 
 ***
 
+### `insertMouseovers`
+<div class="search_terms" style="display: none">insertmouseovers</div>
+
+Recursively walks over children of given `element` and inserts them into `self.mouseOvers`.
+
+```lua
+myObject:insertMouseovers(element)
+```
+
+**Parameters**:
+
+* `element` ([tes3uiElement](../types/tes3uiElement.md))
+
+***
+
 ### `makeComponent`
 <div class="search_terms" style="display: none">makecomponent</div>
 
@@ -587,7 +690,7 @@ myObject:makeComponent(parentBlock)
 Creates a new Slider.
 
 ```lua
-local slider = myObject:new({ label = ..., variable = ..., defaultSetting = ..., min = ..., max = ..., step = ..., jump = ..., decimalPlaces = ..., description = ..., callback = ..., inGameOnly = ..., restartRequired = ..., restartRequiredMessage = ..., indent = ..., childIndent = ..., paddingBottom = ..., childSpacing = ..., postCreate = ..., class = ..., componentType = ..., parentComponent = ... })
+local slider = myObject:new({ label = ..., variable = ..., defaultSetting = ..., min = ..., max = ..., step = ..., jump = ..., decimalPlaces = ..., description = ..., callback = ..., inGameOnly = ..., restartRequired = ..., restartRequiredMessage = ..., indent = ..., childIndent = ..., paddingBottom = ..., childSpacing = ..., convertToLabelValue = ..., postCreate = ..., class = ..., componentType = ..., parentComponent = ... })
 ```
 
 **Parameters**:
@@ -610,6 +713,7 @@ local slider = myObject:new({ label = ..., variable = ..., defaultSetting = ...,
 	* `childIndent` (integer): *Optional*. The left padding size in pixels. Used on all the child components.
 	* `paddingBottom` (integer): *Default*: `4`. The bottom border size in pixels. Only used if the `childSpacing` is unset on the parent component.
 	* `childSpacing` (integer): *Optional*. The bottom border size in pixels. Used on all the child components.
+	* `convertToLabelValue` (fun(self: [mwseMCMSlider](../types/mwseMCMSlider.md), variableValue: number): number, string): *Optional*. Define a custom formatting function for displaying variable values.
 	* `postCreate` (fun(self: [mwseMCMSlider](../types/mwseMCMSlider.md))): *Optional*. Can define a custom formatting function to make adjustments to any element saved in `self.elements`.
 	* `class` (string): *Optional*.
 	* `componentType` (string): *Optional*.
@@ -658,7 +762,7 @@ myObject:printComponent(component)
 ### `registerMouseOverElements`
 <div class="search_terms" style="display: none">registermouseoverelements</div>
 
-Registers an event handler on each given UI element for the `tes3.uiEvent.mouseOver` and `tes3.uiEvent.mouseLeave` that will trigger "MCM:MouseOver" event. That event is used by the MCM to update the sidebar on the mwseMCMSideBarPage.
+Registers an event handler on each given UI element for the `tes3.uiEvent.mouseOver` and `tes3.uiEvent.mouseLeave` that will trigger "MCM:MouseOver" event. That event is used by the MCM to update the sidebar on the [mwseMCMSideBarPage](https://mwse.github.io/MWSE/types/mwseMCMSideBarPage/).
 
 ```lua
 myObject:registerMouseOverElements(mouseOverList)

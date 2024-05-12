@@ -33,9 +33,9 @@ return {
 			},
 			{
 				name = "callback",
-				type = "function",
+				type = "fun(params: tes3ui.showMagicSelectMenu.callbackParams)",
 				optional = true,
-				description = [[A function which will be called once the magic select menu has been closed, including when no item has been selected. A table `callbackParams` will be passed to this function.
+				description = [[A function which will be called once the magic select menu has been closed, including when no item or spell has been selected. A table `callbackParams` will be passed to this function.
 		- `callbackParams` (table)
 			- `spell` ([tes3spell](https://mwse.github.io/MWSE/types/tes3spell/)): The spell or power that has been selected. Can be `nil`.
 			- `item` ([tes3item](https://mwse.github.io/MWSE/types/tes3item/)): The enchanted item that has been selected. The actual magic will be `item.enchantment`. Can be `nil`.
