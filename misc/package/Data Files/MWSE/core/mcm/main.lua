@@ -97,9 +97,9 @@ local function toggleFavorited(mod)
 end
 
 --- sort the given packages
----@param a mwseModConfig
----@param b mwseModConfig
----@return boolean -- true if `a < b`
+--- @param a mwseModConfig
+--- @param b mwseModConfig
+--- @return boolean -- true if `a < b`
 local function sortPackages(a, b)
 	-- check if `a` and `b` have different "favorite" statuses
 	-- `not a.favorite ~= not b.favorite` handles the case when `a.favorite == nil` and `b.favorite == false`
@@ -168,9 +168,17 @@ local function onClickModName(e)
 	lastModName = modName
 end
 
+local keyBinderPopupId = tes3ui.registerID("KeyMouseBinderPopup")
+
 --- Callback for when the close button has been clicked.
 --- @param e keyDownEventData|tes3uiEventData
 local function onClickCloseButton(e)
+	-- Disallow closing MCM menu while KeyBinder popup is active
+	local keyBinderPopup = tes3ui.findMenu(keyBinderPopupId)
+	if keyBinderPopup then
+		return
+	end
+
 	event.unregister("keyDown", onClickCloseButton, { filter = tes3.scanCode.escape })
 
 	-- save the list of favorites
@@ -512,7 +520,7 @@ event.register("uiActivated", onCreatedMenuOptions, { filter = "MenuOptions" })
 --- @class mwseModConfig : mwse.registerModConfig.package
 --- @field name string
 --- @field hidden boolean hide it?
----@field favorite boolean is this mod a favorite
+--- @field favorite boolean is this mod a favorite
 
 --- Define a new function in the mwse namespace that lets mods register for mod config.
 --- @param name string

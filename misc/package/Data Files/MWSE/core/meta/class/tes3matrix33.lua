@@ -41,12 +41,6 @@ function tes3matrix33:copy() end
 --- @param z number No description yet available.
 function tes3matrix33:fromEulerXYZ(x, y, z) end
 
---- Fills the matrix with values from euler angles in radians.
---- @param z number No description yet available.
---- @param y number No description yet available.
---- @param x number No description yet available.
-function tes3matrix33:fromEulerZYX(z, y, x) end
-
 --- Fill the matrix by converting a quaternion.
 --- @param quaternion niQuaternion No description yet available.
 function tes3matrix33:fromQuaternion(quaternion) end

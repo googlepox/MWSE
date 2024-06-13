@@ -6268,6 +6268,22 @@ namespace mwse::lua {
 		genCallEnforced(0x4C259A, 0x481D80, reinterpret_cast<DWORD>(&AddObjectToHashMapById));
 		genCallEnforced(0x4C2664, 0x481D80, reinterpret_cast<DWORD>(&AddObjectToHashMapById));
 
+		// Event: startGlobalScript
+		auto startGlobalScript = &TES3::WorldController::startGlobalScript;
+		genCallEnforced(0x419AE7, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScript));
+		genCallEnforced(0x419B2B, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScript));
+		genCallEnforced(0x4C4E11, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScript));
+		genCallEnforced(0x4C4E54, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScript));
+		genCallEnforced(0x4C5425, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScript));
+		genCallEnforced(0x4C5468, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScript));
+		genCallEnforced(0x5073F7, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScript));
+		genCallEnforced(0x5FB1A9, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScript));
+		genCallEnforced(0x5FB1EB, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScript));
+		genCallEnforced(0x5FE94D, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScript));
+		genCallEnforced(0x5FE991, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScript));
+		auto startGlobalScriptBySourceID = &TES3::WorldController::startGlobalScriptBySourceID;
+		genCallEnforced(0x4FF826, 0x40FA80, *reinterpret_cast<DWORD*>(&startGlobalScriptBySourceID));
+
 		// UI framework hooks
 		TES3::UI::hook();
 

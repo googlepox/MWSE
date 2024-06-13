@@ -92,23 +92,6 @@ myObject:fromEulerXYZ(x, y, z)
 
 ***
 
-### `fromEulerZYX`
-<div class="search_terms" style="display: none">fromeulerzyx</div>
-
-Fills the matrix with values from euler angles in radians.
-
-```lua
-myObject:fromEulerZYX(z, y, x)
-```
-
-**Parameters**:
-
-* `z` (number)
-* `y` (number)
-* `x` (number)
-
-***
-
 ### `fromQuaternion`
 <div class="search_terms" style="display: none">fromquaternion</div>
 
