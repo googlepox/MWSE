@@ -13,6 +13,9 @@
 --- @field impulseVelocity tes3vector3 A vector that represents the 3D acceleration of the object.
 --- @field inventory tes3itemStack[] *Read-only*. Access to the items the mobile object has in its inventory.
 --- @field isAffectedByGravity boolean If `true`, the mobile is affected by gravity. Does not have any effect on spell projectiles.
+--- @field mobToMobCollision boolean Allows modifying if this mobile will collide with other mobiles (actors and projectiles). When `true` (default), the actor cannot move through other actors, and projectiles will collide with actors. When `false`, the actor is allowed to move through other actors, and other actors can move through it. Projectiles will pass through actors and other projectiles.
+--- 
+--- May be useful when free movement is required in crowded situations, or to temporarily let the player move past an actor.
 --- @field movementCollision boolean Controls if the mobile has movement collision active. When false, the mobile can move through any object, but can still block other mobiles, and can still be hit in combat. Actors will still follow pathgrids, ramps and stairs when navigating.
 --- @field movementFlags integer Access to the root mobile object movement flags, represented as an integer. Should not be accessed directly.
 --- @field objectType tes3.objectType *Read-only*. The type of mobile object. Maps to values in [`tes3.objectType`](https://mwse.github.io/MWSE/references/object-types/) namespace.

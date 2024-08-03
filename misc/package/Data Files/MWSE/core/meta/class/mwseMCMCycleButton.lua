@@ -7,6 +7,12 @@
 --- @field options tes3uiCycleButtonOption[] This table holds the text and variable value for each of the cycle button's options.
 mwseMCMCycleButton = {}
 
+--- This function specifies how values stored in the `variable` field should correspond to values displayed by this CycleButton.
+--- The default behavior is to return the `text` of the [`mwseMCMCycleButton`](./mwseMCMCycleButton.md) with a given `variableValue`.
+--- @param variableValue any The value of a [`mwseMCMCycleButton`](./mwseMCMCycleButton.md) stored in `self.options`.
+--- @return string labelValue The label of the corresponding [`mwseMCMCycleButton`](./mwseMCMCycleButton.md).
+function mwseMCMCycleButton:convertToLabelValue(variableValue) end
+
 --- This method is unused in cycle button setting.
 function mwseMCMCycleButton:getText() end
 
@@ -23,7 +29,7 @@ function mwseMCMCycleButton:makeComponent(parentBlock) end
 --- 
 --- `options`: tes3uiCycleButtonOption[] — This table holds the text and variable value for each of the cycle button's options.
 --- 
---- `leftSide `: boolean? — *Default*: `true`. If true, the button will be created on the left and label on the right.
+--- `leftSide`: boolean? — *Default*: `true`. If true, the button will be created on the left and label on the right.
 --- 
 --- `variable`: mwseMCMConfigVariable|mwseMCMCustomVariable|mwseMCMGlobal|mwseMCMGlobalBoolean|mwseMCMPlayerData|mwseMCMTableVariable|mwseMCMVariable|mwseMCMSettingNewVariable|nil — *Optional*. A variable for this cycle button.
 --- 
@@ -60,7 +66,7 @@ function mwseMCMCycleButton:new(data) end
 --- @field label string? *Optional*. Text shown next to the button.
 --- @field description string? *Optional*. If in a [Sidebar Page](../types/mwseMCMSideBarPage.md), the description will be shown on mouseover.
 --- @field options tes3uiCycleButtonOption[] This table holds the text and variable value for each of the cycle button's options.
---- @field leftSide  boolean? *Default*: `true`. If true, the button will be created on the left and label on the right.
+--- @field leftSide boolean? *Default*: `true`. If true, the button will be created on the left and label on the right.
 --- @field variable mwseMCMConfigVariable|mwseMCMCustomVariable|mwseMCMGlobal|mwseMCMGlobalBoolean|mwseMCMPlayerData|mwseMCMTableVariable|mwseMCMVariable|mwseMCMSettingNewVariable|nil *Optional*. A variable for this cycle button.
 --- @field defaultSetting unknown? *Optional*. If `defaultSetting` wasn't passed in the `variable` table, can be passed here. The new variable will be initialized to this value.
 --- @field callback nil|fun(self: mwseMCMCycleButton) *Optional*. The custom function called when the player interacts with this cycle button.

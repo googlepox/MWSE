@@ -14,7 +14,7 @@ mwseMCMYesNoButton = {}
 --- 
 --- `description`: string? — *Optional*. If in a [Sidebar Page](../types/mwseMCMSideBarPage.md), the description will be shown on mouseover.
 --- 
---- `leftSide `: boolean? — *Default*: `true`. If true, the button will be created on the left and label on the right.
+--- `leftSide`: boolean? — *Default*: `true`. If true, the button will be created on the left and label on the right.
 --- 
 --- `variable`: mwseMCMConfigVariable|mwseMCMCustomVariable|mwseMCMGlobal|mwseMCMGlobalBoolean|mwseMCMPlayerData|mwseMCMTableVariable|mwseMCMVariable|mwseMCMSettingNewVariable|nil — *Optional*. A variable for this Button.
 --- 
@@ -50,7 +50,7 @@ function mwseMCMYesNoButton:new(data) end
 --- @class mwseMCMYesNoButton.new.data
 --- @field label string? *Optional*. Text shown next to the button.
 --- @field description string? *Optional*. If in a [Sidebar Page](../types/mwseMCMSideBarPage.md), the description will be shown on mouseover.
---- @field leftSide  boolean? *Default*: `true`. If true, the button will be created on the left and label on the right.
+--- @field leftSide boolean? *Default*: `true`. If true, the button will be created on the left and label on the right.
 --- @field variable mwseMCMConfigVariable|mwseMCMCustomVariable|mwseMCMGlobal|mwseMCMGlobalBoolean|mwseMCMPlayerData|mwseMCMTableVariable|mwseMCMVariable|mwseMCMSettingNewVariable|nil *Optional*. A variable for this Button.
 --- @field defaultSetting boolean? *Default*: `false`. If `defaultSetting` wasn't passed in the `variable` table, can be passed here. The new variable will be initialized to this value.
 --- @field callback nil|fun(self: mwseMCMYesNoButton) *Optional*. The custom function called when the player interacts with this Button.

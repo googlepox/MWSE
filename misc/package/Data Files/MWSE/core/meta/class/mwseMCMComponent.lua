@@ -39,7 +39,7 @@
 --- @field componentType string For mwseMCMComponent this is set to `"Component"`.
 --- @field createContentsContainer nil|fun(self: mwseMCMComponent, outerContainer: tes3uiElement) This method creates the contents of a component. Not every component implements this method.
 --- @field description string|nil If in a [Sidebar Page](./mwseMCMSideBarPage.md), the description will be shown on mouseover.
---- @field elements mwseMCMButtonElements|mwseMCMCategoryElements|mwseMCMComponentElements|mwseMCMDropdownElements|mwseMCMExclusionsPageElements|mwseMCMFilterPageElements|mwseMCMInfoElements|mwseMCMMouseOverPageElements|mwseMCMParagraphFieldElements|mwseMCMSideBarPageElements|mwseMCMSliderElements|mwseMCMTemplateElements|mwseMCMTextFieldElements This dictionary holds all the UI elements of the Component, for easy access.
+--- @field elements mwseMCMButtonElements|mwseMCMCategoryElements|mwseMCMComponentElements|mwseMCMDropdownElements|mwseMCMExclusionsPageElements|mwseMCMFilterPageElements|mwseMCMInfoElements|mwseMCMMouseOverPageElements|mwseMCMPageElements|mwseMCMParagraphFieldElements|mwseMCMSideBarPageElements|mwseMCMSliderElements|mwseMCMTemplateElements|mwseMCMTextFieldElements This dictionary holds all the UI elements of the Component, for easy access.
 --- @field indent integer The left padding size in pixels. Only used if the `childIndent` isn't set on the parent component.
 --- @field inGameOnly boolean If true, then this component will be disabled when on the main menu.
 --- @field label string The text of the component. Not all component types have a label.
@@ -96,88 +96,11 @@ function mwseMCMComponent:disable() end
 --- Enables the component's UI elements. That includes: changing the color of the UI elements to the `tes3.palette.normalColor` and registering handlers for `tes3.uiEvent.mouseClick` for buttons.
 function mwseMCMComponent:enable() end
 
---- Creates a new Component of given class or returns the given Component.
---- @param componentData mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|mwseMCMComponent.getComponent.componentData This table accepts the following values:
+--- Retrieves the text that this component should display in any related [`mouseOverInfo`s](./mwseMCMMouseOverInfo.md). This method currently utilized to display this component's description whenever the component is in a [`SideBarPage`](./mwseMCMSideBarPage.md).
 --- 
---- `class`: string — The component type to get. On of the following:
---- --- 		- `"Template"`
---- --- 		- `"ExclusionsPage"`
---- --- 		- `"FilterPage"`
---- --- 		- `"MouseOverPage"`
---- --- 		- `"Page"`
---- --- 		- `"SideBarPage"`
---- --- 		- `"Category"`
---- --- 		- `"SideBySideBlock"`
---- --- 		- `"ActiveInfo"`
---- --- 		- `"Hyperlink"`
---- --- 		- `"Info"`
---- --- 		- `"MouseOverInfo"`
---- --- 		- `"Setting"`
---- --- 		- `"Button"`
---- --- 		- `"OnOffButton"`
---- --- 		- `"YesNoButton"`
---- --- 		- `"CycleButton"`
---- --- 		- `"KeyBinder"`
---- --- 		- `"Dropdown"`
---- --- 		- `"TextField"`
---- --- 		- `"ParagraphField"`
---- --- 		- `"Slider"`
---- --- 		- `"DecimalSlider"`
---- --- 		- `"PercentageSlider"`
---- 
---- `label`: string? — *Optional*. The label text to set for the new component. Not all component types have a label.
---- 
---- `indent`: integer? — *Default*: `12`. The left padding size in pixels. Only used if the `childIndent` isn't set on the parent component.
---- 
---- `childIndent`: integer? — *Optional*. The left padding size in pixels. Used on all the child components.
---- 
---- `paddingBottom`: integer? — *Default*: `4`. The bottom border size in pixels. Only used if the `childSpacing` is unset on the parent component.
---- 
---- `childSpacing`: integer? — *Optional*. The bottom border size in pixels. Used on all the child components.
---- 
---- `inGameOnly`: boolean? — *Default*: `false`. No description yet available.
---- 
---- `postCreate`: nil|fun(self: mwseMCMComponent) — *Optional*. Can define a custom formatting function to make adjustments to any element saved in `self.elements`.
---- 
---- `parentComponent`: mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil — *Optional*. No description yet available.
---- @return mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton component No description yet available.
-function mwseMCMComponent:getComponent(componentData) end
-
----Table parameter definitions for `mwseMCMComponent.getComponent`.
---- @class mwseMCMComponent.getComponent.componentData
---- @field class string The component type to get. On of the following:
---- 		- `"Template"`
---- 		- `"ExclusionsPage"`
---- 		- `"FilterPage"`
---- 		- `"MouseOverPage"`
---- 		- `"Page"`
---- 		- `"SideBarPage"`
---- 		- `"Category"`
---- 		- `"SideBySideBlock"`
---- 		- `"ActiveInfo"`
---- 		- `"Hyperlink"`
---- 		- `"Info"`
---- 		- `"MouseOverInfo"`
---- 		- `"Setting"`
---- 		- `"Button"`
---- 		- `"OnOffButton"`
---- 		- `"YesNoButton"`
---- 		- `"CycleButton"`
---- 		- `"KeyBinder"`
---- 		- `"Dropdown"`
---- 		- `"TextField"`
---- 		- `"ParagraphField"`
---- 		- `"Slider"`
---- 		- `"DecimalSlider"`
---- 		- `"PercentageSlider"`
---- @field label string? *Optional*. The label text to set for the new component. Not all component types have a label.
---- @field indent integer? *Default*: `12`. The left padding size in pixels. Only used if the `childIndent` isn't set on the parent component.
---- @field childIndent integer? *Optional*. The left padding size in pixels. Used on all the child components.
---- @field paddingBottom integer? *Default*: `4`. The bottom border size in pixels. Only used if the `childSpacing` is unset on the parent component.
---- @field childSpacing integer? *Optional*. The bottom border size in pixels. Used on all the child components.
---- @field inGameOnly boolean? *Default*: `false`. No description yet available.
---- @field postCreate nil|fun(self: mwseMCMComponent) *Optional*. Can define a custom formatting function to make adjustments to any element saved in `self.elements`.
---- @field parentComponent mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil *Optional*. No description yet available.
+--- Primarily intended for internal use.
+--- @return string|nil text The text to display. Returning `nil` means that the `mouseOverInfo` should display text from a different source. e.g. from the `description` of the relevant [`SideBarPage`](./mwseMCMSideBarPage.md).
+function mwseMCMComponent:getMouseOverText() end
 
 --- Creates a new Component.
 --- @param data mwseMCMComponent.new.data? This table accepts the following values:
@@ -219,11 +142,6 @@ function mwseMCMComponent:new(data) end
 --- @field class string? *Optional*. No description yet available.
 --- @field componentType string? *Optional*. No description yet available.
 --- @field parentComponent mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil *Optional*. No description yet available.
-
---- Prepares the provided parameters table and sets the `parentComponent` field to `mwseMCMComponent`.
---- @param data string|mwseMCMComponent.new.data|nil *Optional*. No description yet available.
---- @return mwseMCMComponent.new.data data No description yet available.
-function mwseMCMComponent:prepareData(data) end
 
 --- Prints the component table to the `mwse.log`. If a component is passed, it will be printed. If called without arguments, the component it was called on will be printed.
 --- @param component table? *Default*: `self`. No description yet available.

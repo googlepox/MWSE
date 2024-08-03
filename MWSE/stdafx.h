@@ -24,6 +24,8 @@
 #include <unordered_set>
 #include <vector>
 #include <future>
+#include <regex>
+#include <charconv>
 
 // Required C includes.
 #include <cmath>
@@ -54,6 +56,10 @@
 
 // Core lua binding library.
 #include <sol/sol.hpp>
+
+// Evil YAML library we are forced to use.
+#define YAML_CPP_STATIC_DEFINE 
+#include <yaml-cpp/yaml.h>
 
 // Undefine anything we don't care about otherwise.
 #undef far

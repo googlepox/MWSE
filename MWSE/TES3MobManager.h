@@ -96,9 +96,9 @@ namespace TES3 {
 		// Custom functions.
 		//
 
-		bool hasMobileCollision(const MobileActor* mobile);
-		void enableMobileCollision(MobileActor* mobile);
-		void disableMobileCollision(MobileActor* mobile);
+		bool hasMobileCollision(const MobileObject* mobile);
+		void enableMobileCollision(MobileObject* mobile);
+		void disableMobileCollision(MobileObject* mobile);
 		void resetConstantVelocities();
 		void clampAllActors();
 

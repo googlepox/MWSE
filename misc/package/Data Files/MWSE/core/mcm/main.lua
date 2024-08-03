@@ -54,22 +54,21 @@ end
 
 -- Expose the mcm API.
 mwse.mcm = require("mcm.mcm")
-mwse.mcm.i18n = mwse.loadTranslations("mcm")
+mwse.mcm.i18n = mwse.loadTranslations("..")
 
--- credit to Pherim for the default icons
+-- credit to Pherim and MelchiorDahrk for the default icons
 local favoriteIcons = {
-	idle = "textures/mwse/menu_modconfig_favorite_idle.dds",
-	-- hover over a favorite to remove it
-	over = "textures/mwse/menu_modconfig_favorite_over.dds",
-	pressed = "textures/mwse/menu_modconfig_favorite_pressed.dds",
-	-- id = "FavoriteButton"
+	id = "UnFavoriteButton",
+	idle = "textures/mwse/menu_modconfig_favorite.tga",
+	over = "textures/mwse/menu_modconfig_favorite_unset.tga",
+	pressed = "textures/mwse/menu_modconfig_favorite_unset.tga",
 }
 
 local nonFavoriteIcons = {
-	idle = "textures/mwse/menu_modconfig_nonfavorite_idle.dds",
-	-- hover over a favorite to remove it
-	over = "textures/mwse/menu_modconfig_nonfavorite_over.dds",
-	pressed = "textures/mwse/menu_modconfig_nonfavorite_pressed.dds",
+	id = "FavoriteButton",
+	idle = "textures/mwse/menu_modconfig_favorite.tga",
+	over = "textures/mwse/menu_modconfig_favorite_set.tga",
+	pressed = "textures/mwse/menu_modconfig_favorite_set.tga",
 }
 
 --- Checks to see if a mod is favorited.
@@ -371,7 +370,6 @@ local function onClickModConfigButton()
 			entryBlock.flowDirection = tes3.flowDirection.leftToRight
 			entryBlock.autoHeight = true
 			entryBlock.autoWidth = true
-
 			entryBlock.widthProportional = 1.0
 			entryBlock.childAlignY = 0.5
 
@@ -390,6 +388,8 @@ local function onClickModConfigButton()
 			imageButton.absolutePosAlignX = .97
 			-- imageButton.absolutePosAlignY = 1.0
 			imageButton.absolutePosAlignY = 0.5
+			imageButton.consumeMouseEvents = true
+			imageButton.visible = isFavorite(package.name)
 
 			imageButton:register(tes3.uiEvent.mouseClick, onClickFavoriteButton)
 			---@param image tes3uiElement
@@ -399,6 +399,15 @@ local function onClickModConfigButton()
 				image.width = 16
 				image.paddingTop = 3
 			end
+
+			local onHover = function() imageButton.visible = true end
+			local onLeave = function() imageButton.visible = isFavorite(package.name) end
+			entryBlock:registerAfter(tes3.uiEvent.mouseOver, onHover)
+			entryBlock:registerAfter(tes3.uiEvent.mouseLeave, onLeave)
+			modNameButton:registerAfter(tes3.uiEvent.mouseOver, onHover)
+			modNameButton:registerAfter(tes3.uiEvent.mouseLeave, onLeave)
+			imageButton:registerAfter(tes3.uiEvent.mouseOver, onHover)
+			imageButton:registerAfter(tes3.uiEvent.mouseLeave, onLeave)
 		end
 
 		-- Create container for mod content. This will be deleted whenever the pane is reloaded.

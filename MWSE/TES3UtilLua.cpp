@@ -351,7 +351,7 @@ namespace mwse::lua {
 		if (mobilePlayer) {
 			if (soundPath) {
 				bool isVoiceover = getOptionalParam<bool>(params, "isVoiceover", false);
-				TES3::DataHandler::get()->addTemporySound(soundPath, reference, loop ? TES3::SoundPlayFlags::Loop : 0, int(volume), pitch, isVoiceover, sound);
+				TES3::DataHandler::get()->addTemporarySound(soundPath, reference, loop ? TES3::SoundPlayFlags::Loop : 0, int(volume), pitch, isVoiceover, sound);
 				return true;
 			}
 			else if (sound) {
@@ -4205,7 +4205,7 @@ namespace mwse::lua {
 		}
 
 		// Play the related sound.
-		dataHandler->addTemporySound(path, reference, 0, int(volume), pitch, true);
+		dataHandler->addTemporarySound(path, reference, 0, int(volume), pitch, true);
 	}
 
 	bool hasOwnershipAccess(sol::table params) {
@@ -4335,6 +4335,34 @@ namespace mwse::lua {
 		}
 
 		return droppedReference;
+	}
+
+	bool equip(sol::optional<sol::table> params) {
+		const auto reference = getOptionalParamReference(params, "reference");
+		if (!reference) {
+			throw std::runtime_error("Invalid 'reference' parameter provided.");
+		}
+		else if (!reference->baseObject->isActor()) {
+			throw std::runtime_error("Invalid 'reference' parameter provided. It does not have an inventory.");
+		}
+
+		const auto mobile = reference->getAttachedMobileActor();
+		if (mobile == nullptr) {
+			return false;
+		}
+
+		const auto item = getOptionalParamObject<TES3::Item>(params, "item");
+		if (item == nullptr) {
+			return false;
+		}
+
+		const auto itemData = getOptionalParam<TES3::ItemData*>(params, "itemData", nullptr);
+		const auto addItem = getOptionalParam<bool>(params, "addItem", false);
+		const auto selectBestCondition = getOptionalParam<bool>(params, "selectBestCondition", false);
+		const auto selectWorstCondition = getOptionalParam<bool>(params, "selectWorstCondition", false);
+		const auto bypassEquipEvents = getOptionalParam<bool>(params, "bypassEquipEvents", false);
+
+		return mobile->equipItem(item, itemData, addItem, selectBestCondition, selectWorstCondition, !bypassEquipEvents);
 	}
 
 	bool persuade(sol::table params) {
@@ -6151,6 +6179,7 @@ namespace mwse::lua {
 		tes3["disableKey"] = disableKey;
 		tes3["dropItem"] = dropItem;
 		tes3["enableKey"] = enableKey;
+		tes3["equip"] = equip;
 		tes3["fadeIn"] = fadeIn;
 		tes3["fadeOut"] = fadeOut;
 		tes3["fadeTo"] = fadeTo;

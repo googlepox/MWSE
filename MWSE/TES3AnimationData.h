@@ -77,6 +77,7 @@ namespace TES3 {
 		void setHeadNode(NI::Node* head);
 		bool setSourceKeyframes(KeyframeDefinition* kfData, int sourceIndex, bool isBiped);
 		void updateMovementDelta(float timing, Vector3* inout_startingPosition, bool dontUpdatePositionDelta);
+		void headTracking(Reference* actorRefr, Reference* targetRefr);
 
 		//
 		// Custom functions.

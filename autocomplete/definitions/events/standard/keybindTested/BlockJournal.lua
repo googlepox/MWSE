@@ -1,7 +1,17 @@
 --- @param e keybindTestedEventData
 local function noJournalMenu(e)
-    -- We only care about checks to see if the key was pressed.
-    if (e.transition ~= tes3.keyTransition.isDown) then
+	--[[ A keybind can have different transition types.
+
+	tes3.keyTransition.downThisFrame     - If keybind changed from up to down ("pressed")
+	tes3.keyTransition.upThisFrame       - If keybind changed from down to up ("unpressed")
+	tes3.keyTransition.changedThisFrame  - If keybind changed state ("toggled")
+	tes3.keyTransition.isDown			 - If keybind is currently pressed ("while held")
+	
+	The transition type is specific per test, as there are different use cases for each transition, and there may be multiple tests per keybind. You may need to log this event to see how the game utilizes a keybind.
+	]]--
+	
+    -- We only care about keybind tests that check if the key was pressed this frame.
+    if (e.transition ~= tes3.keyTransition.downThisFrame) then
         return
     end
 

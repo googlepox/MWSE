@@ -854,6 +854,30 @@ end
 
 
 -------------------------------------------------
+-- Extend our base API: yaml
+-------------------------------------------------
+
+function yaml.loadFile(fileName)
+	-- Load the contents of the file.
+	local f = io.open(fileName, "r")
+	if (f == nil) then
+		return nil, { reason = "Could not open file." }
+	end
+
+	local fileContents = f:read("*all")
+	f:close()
+
+	-- Return decoded yaml.
+	local status, resultOrError = pcall(yaml.decode, fileContents)
+	if (status) then
+		return resultOrError
+	else
+		return nil, resultOrError
+	end
+end
+
+
+-------------------------------------------------
 -- Extend our base API: mwse
 -------------------------------------------------
 

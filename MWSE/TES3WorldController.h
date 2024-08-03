@@ -28,6 +28,7 @@ namespace TES3 {
 		Up = 0,
 		Down = 1,
 		Direct = 2,
+		Consume = 3
 	};
 
 	struct WorldControllerRenderCamera {

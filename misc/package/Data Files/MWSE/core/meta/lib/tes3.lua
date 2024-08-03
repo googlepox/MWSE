@@ -737,6 +737,41 @@ function tes3.dropItem(params) end
 --- @param keyCode tes3.scanCode|integer Maps to values in [`tes3.scanCode`](https://mwse.github.io/MWSE/references/scan-codes/) namespace.
 function tes3.enableKey(keyCode) end
 
+--- Equips an item, optionally adding the item if needed. If the best match is already equipped, it does not perform an unequip-equip cycle, but does return `true`. If the item cannot be equipped, it will return `false`.
+--- 
+--- Equip may fail for the following reasons:
+--- 
+--- - The item cannot be found in the inventory.
+--- - The exact match cannot be found when itemData is provided.
+--- - When a weapon is being used to attack, it cannot be replaced.
+--- @param params tes3.equip.params This table accepts the following values:
+--- 
+--- `reference`: tes3reference|tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer|string — The reference to perform the equip on.
+--- 
+--- `item`: tes3alchemy|tes3apparatus|tes3armor|tes3book|tes3clothing|tes3ingredient|tes3light|tes3lockpick|tes3misc|tes3probe|tes3repairTool|tes3weapon|string — The item to equip.
+--- 
+--- `itemData`: tes3itemData? — *Optional*. The item data of the specific item to equip, if a specific item is required.
+--- 
+--- `addItem`: boolean? — *Default*: `false`. If `true`, the item will be added to the actor's inventory if needed.
+--- 
+--- `selectBestCondition`: boolean? — *Default*: `false`. If `true`, the item in the inventory with the best condition and best charge will be selected.
+--- 
+--- `selectWorstCondition`: boolean? — *Default*: `false`. If `true`, the item in the inventory with the worst condition and worst charge will be selected. Can be useful for selecting tools.
+--- 
+--- `bypassEquipEvents`: boolean? — *Default*: `false`. If `true`, this call will not raise any `equip`-related events.
+--- @return boolean itemEquipped No description yet available.
+function tes3.equip(params) end
+
+---Table parameter definitions for `tes3.equip`.
+--- @class tes3.equip.params
+--- @field reference tes3reference|tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer|string The reference to perform the equip on.
+--- @field item tes3alchemy|tes3apparatus|tes3armor|tes3book|tes3clothing|tes3ingredient|tes3light|tes3lockpick|tes3misc|tes3probe|tes3repairTool|tes3weapon|string The item to equip.
+--- @field itemData tes3itemData? *Optional*. The item data of the specific item to equip, if a specific item is required.
+--- @field addItem boolean? *Default*: `false`. If `true`, the item will be added to the actor's inventory if needed.
+--- @field selectBestCondition boolean? *Default*: `false`. If `true`, the item in the inventory with the best condition and best charge will be selected.
+--- @field selectWorstCondition boolean? *Default*: `false`. If `true`, the item in the inventory with the worst condition and worst charge will be selected. Can be useful for selecting tools.
+--- @field bypassEquipEvents boolean? *Default*: `false`. If `true`, this call will not raise any `equip`-related events.
+
 --- Similar to the vanilla FadeIn mwscript command.
 --- @param params tes3.fadeIn.params? This table accepts the following values:
 --- 
@@ -3865,6 +3900,7 @@ tes3.event = require("tes3.event")
 ---| `tes3.event.calcSunDamageScalar`
 ---| `tes3.event.calcSwimRunSpeed`
 ---| `tes3.event.calcSwimSpeed`
+---| `tes3.event.calcTouchSpellCone`
 ---| `tes3.event.calcTrainingPrice`
 ---| `tes3.event.calcTravelPrice`
 ---| `tes3.event.calcWalkSpeed`
@@ -5561,6 +5597,7 @@ tes3.inventoryTileType = require("tes3.inventoryTileType")
 tes3.itemSoundState = require("tes3.itemSoundState")
 
 --- @alias tes3.itemSoundState
+---| `tes3.itemSoundState.consume`
 ---| `tes3.itemSoundState.direct`
 ---| `tes3.itemSoundState.down`
 ---| `tes3.itemSoundState.up`

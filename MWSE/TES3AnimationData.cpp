@@ -84,6 +84,11 @@ namespace TES3 {
 		TES3_AnimationData_updateMovementDelta(this, timing, inout_startingPosition, dontUpdatePositionDelta);
 	}
 
+	const auto TES3_AnimationData_headTracking = reinterpret_cast<void(__thiscall*)(AnimationDataVanilla*, Reference*, Reference*)>(0x46F910);
+	void AnimationDataVanilla::headTracking(Reference* actorRefr, Reference* targetRefr) {
+		TES3_AnimationData_headTracking(this, actorRefr, targetRefr);
+	}
+
 	Reference* AnimationDataVanilla::getReference() const {
 		if (actorNode) {
 			return actorNode->getTes3Reference(false);

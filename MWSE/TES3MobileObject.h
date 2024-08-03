@@ -311,6 +311,9 @@ namespace TES3 {
 		void setMovementCollisionFlag(bool value);
 		sol::table getCollisions_lua(sol::this_state ts) const;
 
+		bool getMobToMobCollision() const;
+		void setMobToMobCollision(bool collide);
+
 		// Storage for cached userdata.
 		sol::object getOrCreateLuaObject(lua_State* L) const;
 		static void clearCachedLuaObject(const MobileObject* object);

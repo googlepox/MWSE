@@ -48,7 +48,7 @@ function mwseMCMBinder:keySelected(keyCombo) end
 --- 
 --- `keybindName`: string? — *Optional*. The keybind name. Shown in the popup menu header. This string is formatted into a localized version of "SET %s KEYBIND". If none is provided the popup has "SET NEW KEYBIND" as header text.
 --- 
---- `leftSide `: boolean? — *Default*: `true`. If true, the button will be created on the left and label on the right.
+--- `leftSide`: boolean? — *Default*: `true`. If true, the button will be created on the left and label on the right.
 --- 
 --- `variable`: mwseMCMConfigVariable|mwseMCMCustomVariable|mwseMCMGlobal|mwseMCMGlobalBoolean|mwseMCMPlayerData|mwseMCMTableVariable|mwseMCMVariable|mwseMCMSettingNewVariable|nil — *Optional*. A variable for this Binder.
 --- 
@@ -86,7 +86,7 @@ function mwseMCMBinder:new(data) end
 --- @field description string? *Optional*. If in a [Sidebar Page](../types/mwseMCMSideBarPage.md), the description will be shown on mouseover.
 --- @field allowCombinations  boolean? *Default*: `true`. If true, the Binder will let the user use modification keys: Shift, Ctrl, and Alt when rebinding.
 --- @field keybindName string? *Optional*. The keybind name. Shown in the popup menu header. This string is formatted into a localized version of "SET %s KEYBIND". If none is provided the popup has "SET NEW KEYBIND" as header text.
---- @field leftSide  boolean? *Default*: `true`. If true, the button will be created on the left and label on the right.
+--- @field leftSide boolean? *Default*: `true`. If true, the button will be created on the left and label on the right.
 --- @field variable mwseMCMConfigVariable|mwseMCMCustomVariable|mwseMCMGlobal|mwseMCMGlobalBoolean|mwseMCMPlayerData|mwseMCMTableVariable|mwseMCMVariable|mwseMCMSettingNewVariable|nil *Optional*. A variable for this Binder.
 --- @field defaultSetting mwseKeyCombo|mwseKeyMouseCombo|mwseKeyMouseCombo|nil *Optional*. If `defaultSetting` wasn't passed in the `variable` table, can be passed here. The new variable will be initialized to this value.
 --- @field callback nil|fun(self: mwseMCMBinder) *Optional*. The custom function called when the player interacts with this Binder.

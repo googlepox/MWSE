@@ -87,6 +87,8 @@
 #include "StringUtilLua.h"
 #include "TES3UtilLua.h"
 
+#include "yamlloader.hpp"
+
 #include "TES3ActionDataLua.h"
 #include "TES3ActivatorLua.h"
 #include "TES3ActorAnimationControllerLua.h"
@@ -212,6 +214,7 @@
 #include "LuaCalcSpellmakingPriceEvent.h"
 #include "LuaCalcSpellmakingSpellPointCostEvent.h"
 #include "LuaCalcSpellPriceEvent.h"
+#include "LuaCalcTouchSpellConeEvent.h"
 #include "LuaCalcTrainingPriceEvent.h"
 #include "LuaCalcTravelPriceEvent.h"
 #include "LuaCellChangedEvent.h"
@@ -257,6 +260,7 @@
 #include "LuaObjectCopiedEvent.h"
 #include "LuaObjectCreatedEvent.h"
 #include "LuaObjectInvalidatedEvent.h"
+#include "LuaPlayItemSoundEvent.h"
 #include "LuaPostInfoResponseEvent.h"
 #include "LuaPotionBrewedEvent.h"
 #include "LuaPotionBrewFailedEvent.h"
@@ -471,6 +475,10 @@ namespace mwse::lua {
 		luaState["math"]["fhuge"] = std::numeric_limits<float>::max();
 		luaState["math"]["epsilon"] = std::numeric_limits<double>::epsilon();
 		luaState["math"]["fepsilon"] = std::numeric_limits<float>::epsilon();
+
+		// Evil YAML support.
+		luaState.create_named_table("yaml");
+		luaState["yaml"]["decode"] = OpenMW::LuaUtil::loadYaml;
 
 		// Bind TES3 data types.
 		bindTES3ActionData();
@@ -4424,15 +4432,47 @@ namespace mwse::lua {
 	}
 
 	// Override of touch magic hit cone check. Saves data to be used in generic hit cone check later.
-	TES3::MobileActor* PatchCombatTouchMagicHitDetection(TES3::MobileActor* attacker) {
+	TES3::MobileActor* __stdcall PatchCombatTouchMagicHitDetection2(TES3::MobileActor* attacker, TES3::MagicSourceInstance* sourceInstance) {
 		auto ndd = TES3::DataHandler::get()->nonDynamicData;
-		attackReach_saved = ndd->GMSTs[TES3::GMST::fCombatDistance]->value.asFloat;
-		fCombatAngleXY_saved = ndd->GMSTs[TES3::GMST::fCombatAngleXY]->value.asFloat;
-		fCombatAngleZ_saved = ndd->GMSTs[TES3::GMST::fCombatAngleZ]->value.asFloat;
+		float attackReach = ndd->GMSTs[TES3::GMST::fCombatDistance]->value.asFloat;
+		float fCombatAngleXY = ndd->GMSTs[TES3::GMST::fCombatAngleXY]->value.asFloat;
+		float fCombatAngleZ = ndd->GMSTs[TES3::GMST::fCombatAngleZ]->value.asFloat;
+
+		// Fire event.
+		if (event::CalcTouchSpellConeEvent::getEventEnabled()) {
+			const double radiansToDegrees = 57.29577951308232;
+			double degreesXY = radiansToDegrees * std::asin(fCombatAngleXY);
+			double degreesZ = radiansToDegrees * std::asin(fCombatAngleZ);
+
+			auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
+			sol::object response = stateHandle.triggerEvent(new event::CalcTouchSpellConeEvent(attacker, sourceInstance, attackReach, degreesXY, degreesZ));
+			if (response.get_type() == sol::type::table) {
+				sol::table eventData = response;
+				attackReach = eventData["reach"];
+				degreesXY = eventData["angleXY"];
+				degreesZ = eventData["angleZ"];
+				fCombatAngleXY = float(std::sin(std::min(90.0, degreesXY) / radiansToDegrees));
+				fCombatAngleZ = float(std::sin(std::min(90.0, degreesZ) / radiansToDegrees));
+			}
+		}
+
+		// Save values for use in cone test function.
+		attackReach_saved = attackReach;
+		fCombatAngleXY_saved = fCombatAngleXY;
+		fCombatAngleZ_saved = fCombatAngleZ;
 
 		// Call original function.
 		const auto TES3_CombatTouchMagicHitDetection = reinterpret_cast<TES3::MobileActor* (__cdecl*)(TES3::MobileActor*)>(0x554C30);
 		return TES3_CombatTouchMagicHitDetection(attacker);
+	}
+
+	__declspec(naked) TES3::MobileActor* PatchCombatTouchMagicHitDetection() {
+		__asm {
+			push esi	// magicSourceInstance
+			push ecx	// attacker mobile
+			call PatchCombatTouchMagicHitDetection2
+			ret
+		}
 	}
 
 	// Generic hit cone check overrides.
@@ -4535,6 +4575,41 @@ namespace mwse::lua {
 
 		return result;
 	}
+
+	//
+	// Event: Play item consumption sound event.
+	//
+
+	TES3::Sound* __fastcall PatchConsumeItemAddSoundById(TES3::DataHandler* dataHandler, DWORD _EDX_, const char* id, TES3::Reference* reference, int playbackFlags, unsigned __int8 volume, float pitch, TES3::BaseObject* patched_item) {
+		// Allow event overrides.
+		if (mwse::lua::event::PlayItemSoundEvent::getEventEnabled()) {
+			auto& luaManager = mwse::lua::LuaManager::getInstance();
+			auto stateHandle = luaManager.getThreadSafeStateHandle();
+			sol::table result = stateHandle.triggerEvent(new mwse::lua::event::PlayItemSoundEvent(patched_item, int(TES3::ItemSoundState::Consume), reference));
+			if (result.valid() && result.get_or("block", false)) {
+				return nullptr;
+			}
+		}
+
+		// Run original code.
+		return dataHandler->addSoundById(id, reference, playbackFlags, volume, pitch, 0);
+	}
+
+	__declspec(naked) bool patchConsumeItemDrinkArgs() {
+		__asm {
+			push ebx
+			nop
+		}
+	}
+	const size_t patchConsumeItemDrinkArgs_size = 2;
+
+	__declspec(naked) bool patchConsumeItemSwallowArgs() {
+		__asm {
+			push edi
+			nop
+		}
+	}
+	const size_t patchConsumeItemSwallowArgs_size = 2;
 
 	//
 	//
@@ -5868,7 +5943,7 @@ namespace mwse::lua {
 		genCallEnforced(0x5621BB, 0x48BD40, *reinterpret_cast<DWORD*>(&dataHandlerAddSound));
 
 		// Event: tempSoundPlay
-		auto dataHandlerAddTemporarySound = &TES3::DataHandler::addTemporySound;
+		auto dataHandlerAddTemporarySound = &TES3::DataHandler::addTemporarySound;
 		genCallEnforced(0x48B953, 0x48C2B0, *reinterpret_cast<DWORD*>(&dataHandlerAddTemporarySound));
 		genCallEnforced(0x48BF1F, 0x48C2B0, *reinterpret_cast<DWORD*>(&dataHandlerAddTemporarySound));
 		genCallEnforced(0x4A28B8, 0x48C2B0, *reinterpret_cast<DWORD*>(&dataHandlerAddTemporarySound));
@@ -5918,7 +5993,7 @@ namespace mwse::lua {
 		// Event: Prevent Rest
 		genCallEnforced(0x564FF6, 0x530A20, reinterpret_cast<DWORD>(OnCheckActionWeightFightForRest));
 
-		// Event: Play Item Up/Down Sound Event
+		// Event: Play Item Up/Down sound.
 		auto WorldController_playItemUpDownSound = &TES3::WorldController::playItemUpDownSound;
 		genCallEnforced(0x49B2C3, 0x411050, *reinterpret_cast<DWORD*>(&WorldController_playItemUpDownSound));
 		genCallEnforced(0x4EA632, 0x411050, *reinterpret_cast<DWORD*>(&WorldController_playItemUpDownSound));
@@ -5945,6 +6020,12 @@ namespace mwse::lua {
 		genCallEnforced(0x5D3B43, 0x411050, *reinterpret_cast<DWORD*>(&WorldController_playItemUpDownSound));
 		genCallEnforced(0x5D3BC8, 0x411050, *reinterpret_cast<DWORD*>(&WorldController_playItemUpDownSound));
 		genCallEnforced(0x61678A, 0x411050, *reinterpret_cast<DWORD*>(&WorldController_playItemUpDownSound));
+
+		// Event: Play item consumption sound.
+		writePatchCodeUnprotected(0x5CF186, reinterpret_cast<BYTE*>(&patchConsumeItemDrinkArgs), patchConsumeItemDrinkArgs_size);
+		genCallEnforced(0x5CF1AC, 0x48BCB0, reinterpret_cast<DWORD>(PatchConsumeItemAddSoundById));
+		writePatchCodeUnprotected(0x5D1BF1, reinterpret_cast<BYTE*>(&patchConsumeItemSwallowArgs), patchConsumeItemSwallowArgs_size);
+		genCallEnforced(0x5D1C2C, 0x48BCB0, reinterpret_cast<DWORD>(PatchConsumeItemAddSoundById));
 
 		// Event: Reference Activated/Deactivated.
 		genCallEnforced(0x4849E8, 0x484E50, reinterpret_cast<DWORD>(AddMobilesToCell));

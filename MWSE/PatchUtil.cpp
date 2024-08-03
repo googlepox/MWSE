@@ -604,8 +604,10 @@ namespace mwse::patch {
 
 	//
 	// Patch: Fix crash when releasing a clone of a light with no reference.
+	//        Also fix crash when the attachment scenegraph light pointer has been cleared.
 	//
-	// This is mostly useful for creating VFXs using a light object as a base.
+	// The first fix is mostly useful for creating VFXs using a light object as a base.
+	// The second fix is to prevent a crash and try to identify the cause of the cleared pointer.
 	//
 
 	TES3::Attachment* __fastcall PatchReleaseLightEntityForReference(const TES3::Reference* reference) {
@@ -613,7 +615,16 @@ namespace mwse::patch {
 			return nullptr;
 		}
 
-		return reference->getAttachment(TES3::AttachmentType::Light);
+		auto attachment = static_cast<TES3::LightAttachment*>(reference->getAttachment(TES3::AttachmentType::Light));
+
+		if (attachment && attachment->data->light == nullptr) {
+			log::getLog() << "[MWSE] Crash prevented while cleaning up light reference to object '" <<
+				reference->baseObject->objectID << "' in cell '" << reference->getCell()->getEditorName() << "'. " <<
+				"Please report this to the #mwse channel in the Morrowind Modding Community discord." << std::endl;
+			return nullptr;
+		}
+
+		return attachment;
 	}
 
 	//
@@ -866,7 +877,7 @@ namespace mwse::patch {
 
 		// Try to get more information about this crash.
 		if (mobile->reference->getSceneGraphNode() == nullptr) {
-			log::getLog() << "No scene graph found when attempting to add animation controller to reference. Doing what we can with the reference. Please report this to the #mwse channel in the Morrowind Modding Community discord." << std::endl;
+			log::getLog() << "[MWSE] No scene graph found when attempting to add animation controller to reference. Doing what we can with the reference. Please report this to the #mwse channel in the Morrowind Modding Community discord." << std::endl;
 			safePrintObjectToLog("Reference", mobile->reference);
 		}
 
@@ -1271,7 +1282,7 @@ namespace mwse::patch {
 		// Patch: Don't save VFX manager if there are no valid visual effects.
 		genCallEnforced(0x4BD149, 0x469CC0, reinterpret_cast<DWORD>(PatchSaveVisualEffects));
 
-		// Patch: Fix crash when releasing a clone of a light with no reference.
+		// Patch: Fix crash when releasing a clone of a light with no reference. Also fix crash when the attachment scenegraph light pointer has been cleared.
 		genCallEnforced(0x4D260C, 0x4E5170, reinterpret_cast<DWORD>(PatchReleaseLightEntityForReference));
 
 		// Patch: Cache values between dialogue filters. The actual override that makes use of this cache is in LuaManager for its hooks.

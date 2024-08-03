@@ -98,6 +98,10 @@ function mwseMCMTextField:new(data) end
 --- Calls the `update` method.
 function mwseMCMTextField:press() end
 
+--- Changes the TextField's `variable.value` to the given value, updates the TextField's label and widget, and calls `self:update`.
+--- @param newValue string No description yet available.
+function mwseMCMTextField:setVariableValue(newValue) end
+
 --- Updates the variable's value to the current text in the text input element. If `self.numbersOnly` is true, it only allows setting the new value to a number.
 function mwseMCMTextField:update() end
 

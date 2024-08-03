@@ -50,7 +50,6 @@ namespace mwse::lua {
 		usertypeDefinition["scanInterval"] = &TES3::MobileActor::scanInterval;
 		usertypeDefinition["scanTimer"] = sol::readonly_property(&TES3::MobileActor::scanTimer);
 		usertypeDefinition["torchSlot"] = &TES3::MobileActor::torchSlot;
-		usertypeDefinition["width"] = sol::readonly_property(&TES3::MobileActor::widthInUnits);
 
 		// Indirect bindings to unions and arrays.
 		usertypeDefinition["activeMagicEffectList"] = sol::readonly_property(&TES3::MobileActor::getActiveMagicEffectsList_lua);
@@ -149,6 +148,7 @@ namespace mwse::lua {
 		usertypeDefinition["hasUsedPower"] = &TES3::MobileActor::hasUsedPower;
 		usertypeDefinition["hitStun"] = &TES3::MobileActor::hitStun_lua;
 		usertypeDefinition["kill"] = &TES3::MobileActor::kill;
+		usertypeDefinition["overrideHeadTrackingThisFrame"] = &TES3::MobileActor::overrideHeadTrackingThisFrame;
 		usertypeDefinition["rechargePower"] = &TES3::MobileActor::rechargePower;
 		usertypeDefinition["resurrect"] = &TES3::MobileActor::resurrect_lua;
 		usertypeDefinition["setPowerUseTimestamp"] = &TES3::MobileActor::setPowerUseTimestamp;
@@ -175,6 +175,7 @@ namespace mwse::lua {
 		usertypeDefinition["hasCorprusDisease"] = sol::readonly_property(&TES3::MobileActor::hasCorprusDisease);
 		usertypeDefinition["hasFreeAction"] = sol::readonly_property(&TES3::MobileActor::isNotKnockedDownOrOut);
 		usertypeDefinition["hasVampirism"] = sol::readonly_property(&TES3::MobileActor::hasVampirism);
+		usertypeDefinition["height"] = sol::readonly_property(&TES3::MobileActor::getHeight);
 		usertypeDefinition["isAttackingOrCasting"] = sol::readonly_property(&TES3::MobileActor::isAttackingOrCasting);
 		usertypeDefinition["isDiseased"] = sol::readonly_property(&TES3::MobileActor::isDiseased);
 		usertypeDefinition["isHitStunned"] = sol::readonly_property(&TES3::MobileActor::isHitStunned);
@@ -182,8 +183,8 @@ namespace mwse::lua {
 		usertypeDefinition["isKnockedOut"] = sol::readonly_property(&TES3::MobileActor::isKnockedOut);
 		usertypeDefinition["isParalyzed"] = sol::readonly_property(&TES3::MobileActor::isParalyzed);
 		usertypeDefinition["isReadyingWeapon"] = sol::readonly_property(&TES3::MobileActor::isReadyingWeapon);
-		usertypeDefinition["mobToMobCollision"] = sol::property(&TES3::MobileActor::getMobToMobCollision, &TES3::MobileActor::setMobToMobCollision);
 		usertypeDefinition["weaponReady"] = sol::property(&TES3::MobileActor::getWeaponReady, &TES3::MobileActor::setWeaponReady);
+		usertypeDefinition["width"] = sol::readonly_property(&TES3::MobileActor::getWidth);
 
 		// Legacy support for old structures.
 		usertypeDefinition["activeMagicEffects"] = sol::readonly_property(&TES3::MobileActor::getActiveMagicEffects_legacy);

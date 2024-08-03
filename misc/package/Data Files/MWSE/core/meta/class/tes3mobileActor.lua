@@ -104,9 +104,6 @@
 --- @field luck tes3statistic|tes3statisticSkill *Read-only*. Direct access to the actor's luck attribute statistic. If you are setting player stats, instead use `tes3.setStatistic` to also update the UI immediately.
 --- @field magicka tes3statistic|tes3statisticSkill *Read-only*. Access to the actor's magicka statistic. When modifying this value, prefer to use `tes3.modStatistic` or `tes3.setStatistic` to also update the UI immediately.
 --- @field magickaMultiplier tes3statistic|tes3statisticSkill *Read-only*. Access to the actor's magicka multiplier statistic.
---- @field mobToMobCollision boolean Allows modifying if this actor will collide with other actors. When `true` (default), the actor cannot move through other actors. When `false`, the actor is allowed to move through other actors, and other actors can move through it.
---- 
---- May be useful when free movement is required in crowded situations, or to temporarily let the player move past an actor.
 --- @field nextActionWeight number *Read-only*. No description yet available.
 --- @field paralyze number Direct access to the actor's paralyze effect attribute.
 --- @field personality tes3statistic|tes3statisticSkill *Read-only*. Direct access to the actor's personality attribute statistic. If you are setting player stats, instead use `tes3.setStatistic` to also update the UI immediately.
@@ -397,6 +394,14 @@ function tes3mobileActor:isAffectedByObject(object) end
 
 --- Kills the actor by setting its health to 0.
 function tes3mobileActor:kill() end
+
+--- 
+--- !!! warning
+--- 	This part of the API isn't fully understood yet and thus is considered experimental. That means that there can be breaking changes requiring the code using this part of the API to be rewritten. The MWSE team will not make any effort to keep backward compatibility with the mods using experimental APIs.
+--- 
+---  Causes the actor to look towards this reference, while obey the usual head turning constraints. This must be called every frame in the `simulate` event to work. It will override regular head look behaviour and the target may be at any distance in the same worldspace.
+--- @param target tes3reference No description yet available.
+function tes3mobileActor:overrideHeadTrackingThisFrame(target) end
 
 --- Makes a power immediately available for casting again.
 --- @param power tes3spell The spell object for the power.
