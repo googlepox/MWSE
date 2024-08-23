@@ -275,6 +275,17 @@ The weather's land fog night depth value.
 
 ***
 
+### `stormOrigin`
+<div class="search_terms" style="display: none">stormorigin</div>
+
+The origin point of weather particles. The storm will appear to blow outwards from this point.
+
+**Returns**:
+
+* `result` ([tes3vector2](../types/tes3vector2.md))
+
+***
+
 ### `sunDayColor`
 <div class="search_terms" style="display: none">sundaycolor</div>
 

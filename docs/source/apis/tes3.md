@@ -762,7 +762,7 @@ local success = tes3.cast({ reference = ..., target = ..., spell = ..., instant 
 
 * `params` (table)
 	* `reference` ([tes3reference](../types/tes3reference.md), [tes3mobileActor](../types/tes3mobileActor.md), string): The caster reference.
-	* `target` ([tes3reference](../types/tes3reference.md), [tes3mobileActor](../types/tes3mobileActor.md), string): The target reference. Optional only if the caster is the player.
+	* `target` ([tes3reference](../types/tes3reference.md), [tes3mobileActor](../types/tes3mobileActor.md), string): *Optional*. The target reference. Optional only if the caster is the player.
 	* `spell` ([tes3spell](../types/tes3spell.md), string): The spell the caster uses.
 	* `instant` (boolean): *Default*: `false`. If `true`, the spell is cast instantly. No animation is performed.
 	* `alwaysSucceeds` (boolean): *Default*: `true`. If `true`, the spell cannot fail and does not consume magicka. If `false`, it is cast using the actor's spell skill, and requires and takes enough magicka to cast. For NPCs, this only applies if `instant` is `true`.

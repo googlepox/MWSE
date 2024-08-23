@@ -4025,9 +4025,22 @@ namespace mwse::lua {
 		return true;
 	}
 
-	int getCurrentAIPackageId(sol::table params) {
-		auto refr = getOptionalParamReference(params, "reference");
-		auto mobileActor = getOptionalParamMobileActor(params, "reference");
+	int getCurrentAIPackageId(sol::object params) {
+		TES3::Reference* refr = nullptr;
+		TES3::MobileActor* mobileActor = nullptr;
+
+		if (params.is<TES3::Reference*>()) {
+			// Legacy param handling where the param is a reference, not a table.
+			refr = params.as<TES3::Reference*>();
+			mobileActor = refr->getAttachedMobileActor();
+		}
+		else if (params.is<sol::table>()) {
+			// Standard param handling.
+			auto paramsTable = params.as<sol::table>();
+			refr = getOptionalParamReference(paramsTable, "reference");
+			mobileActor = getOptionalParamMobileActor(paramsTable, "reference");
+		}
+
 		if (mobileActor) {
 			if (mobileActor->aiPlanner != nullptr) {
 				auto currentPackage = mobileActor->aiPlanner->getActivePackage();

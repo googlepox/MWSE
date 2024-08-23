@@ -44,6 +44,7 @@ namespace mwse::lua {
 			setUserdataForTES3Weather(usertypeDefinition);
 
 			// Basic property binding.
+			usertypeDefinition["stormOrigin"] = &TES3::WeatherAsh::stormOrigin;
 			usertypeDefinition["threshold"] = &TES3::WeatherAsh::stormThreshold;
 		}
 
@@ -60,6 +61,7 @@ namespace mwse::lua {
 			// Basic property binding.
 			usertypeDefinition["blightDiseaseChance"] = &TES3::WeatherBlight::diseaseChance;
 			usertypeDefinition["blightDiseases"] = sol::readonly_property(&TES3::WeatherBlight::blightDiseases);
+			usertypeDefinition["stormOrigin"] = &TES3::WeatherBlight::stormOrigin;
 			usertypeDefinition["threshold"] = &TES3::WeatherBlight::stormThreshold;
 		}
 

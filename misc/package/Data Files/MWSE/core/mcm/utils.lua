@@ -54,7 +54,7 @@ function utils.getComponentClass(className)
 	if not luaPath then return end
 	class = include(luaPath)
 	if not class or type(class) ~= "table" then
-		mwse.log('[MCM: ERROR] Could not find the filepath of "%s"!\n%s', debug.traceback())
+		mwse.log('[MCM: ERROR] Could not find the filepath of "%s"!\n%s', luaPath, debug.traceback())
 		return
 	end
 
@@ -78,7 +78,7 @@ function utils.getVariableClass(className)
 	if not luaPath then return end
 	class = include(luaPath)
 	if not class or type(class) ~= "table" then
-		mwse.log('[MCM: ERROR] Could not find the filepath of "%s"!\n%s', debug.traceback())
+		mwse.log('[MCM: ERROR] Could not find the filepath of "%s"!\n%s', luaPath, debug.traceback())
 		return
 	end
 

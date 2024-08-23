@@ -496,7 +496,7 @@ function tes3.canRest(params) end
 --- 
 --- `reference`: tes3reference|tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer|string — The caster reference.
 --- 
---- `target`: tes3reference|tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer|string — The target reference. Optional only if the caster is the player.
+--- `target`: tes3reference|tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer|string|nil — *Optional*. The target reference. Optional only if the caster is the player.
 --- 
 --- `spell`: tes3spell|string — The spell the caster uses.
 --- 
@@ -511,7 +511,7 @@ function tes3.cast(params) end
 ---Table parameter definitions for `tes3.cast`.
 --- @class tes3.cast.params
 --- @field reference tes3reference|tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer|string The caster reference.
---- @field target tes3reference|tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer|string The target reference. Optional only if the caster is the player.
+--- @field target tes3reference|tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer|string|nil *Optional*. The target reference. Optional only if the caster is the player.
 --- @field spell tes3spell|string The spell the caster uses.
 --- @field instant boolean? *Default*: `false`. If `true`, the spell is cast instantly. No animation is performed.
 --- @field alwaysSucceeds boolean? *Default*: `true`. If `true`, the spell cannot fail and does not consume magicka. If `false`, it is cast using the actor's spell skill, and requires and takes enough magicka to cast. For NPCs, this only applies if `instant` is `true`.

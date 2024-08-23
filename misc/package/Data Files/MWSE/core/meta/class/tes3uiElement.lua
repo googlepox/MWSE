@@ -63,6 +63,7 @@
 --- @field ignoreLayoutY boolean If `true`, the element's [`positionY`](https://mwse.github.io/MWSE/types/tes3uiElement/#positiony) can be modified and will not be affected by any layout restrictions imposed by the parent element. Incompatible with and will change the value of [`absolutePosAlignY`](https://mwse.github.io/MWSE/types/tes3uiElement/#absoluteposaligny).
 --- 	
 --- Elements that bypass parent layout will be ignored when automatically determing the parent's height. See [`autoHeight`](https://mwse.github.io/MWSE/types/tes3uiElement/#autoheight) for more information.
+--- @field imageFilter boolean If true image filtering for `texture` is set to bilinear. It's set to linear otherwise.
 --- @field imageScaleX number Image scaling multipliers. Only applies to image elements. `0` disables scaling and displays the original image. Negative numbers will mirror and scale along this axis.
 --- @field imageScaleY number Image scaling multipliers. Only applies to image elements. `0` disables scaling and displays the original image. Negative numbers will mirror and scale along this axis.
 --- @field justifyText tes3.justifyText Controls text justification. To work correctly for center/right justification, `wrapText` must be `true`. Maps to values in the [`tes3.justifyText`](https://mwse.github.io/MWSE/references/justify-text/) table.
@@ -87,7 +88,7 @@
 --- 
 --- !!! tip
 --- 	If your element's text is a number, you need to manually convert it to string using `tostring()`.
---- @field texture niSourceTexture The underlying texture for the element. This assumes that the element is of an element type. Setting this value will change the element to an image type.
+--- @field texture niSourceTexture The underlying texture for the element. This assumes that the element is of an element type. Setting this value will change the element to an image type. Texture dimensions must be powers of 2.
 --- @field type tes3.uiElementType *Read-only*. The type of content this `tes3uiElement` represents. This is an expanded set of the options available from the `contentType` property. Maps to values in [`tes3.uiElementType`](https://mwse.github.io/MWSE/references/tes3uiElement-types/).
 --- @field visible boolean Controls if the element is visible.
 --- @field widget tes3uiButton|tes3uiColorPicker|tes3uiColorPreview|tes3uiCycleButton|tes3uiFillBar|tes3uiHyperlink|tes3uiParagraphInput|tes3uiScrollPane|tes3uiSlider|tes3uiTextInput|tes3uiTextSelect|nil Access to element specific properties. This will be `nil` if there are no element specific properties. See the return types and the create* functions for more details.

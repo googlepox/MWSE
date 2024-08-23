@@ -339,6 +339,17 @@ Elements that bypass parent layout will be ignored when automatically determing 
 
 ***
 
+### `imageFilter`
+<div class="search_terms" style="display: none">imagefilter</div>
+
+If true image filtering for `texture` is set to bilinear. It's set to linear otherwise.
+
+**Returns**:
+
+* `result` (boolean)
+
+***
+
 ### `imageScaleX`
 <div class="search_terms" style="display: none">imagescalex</div>
 
@@ -576,7 +587,7 @@ The element's text. Text input can be read by accessing this property.
 ### `texture`
 <div class="search_terms" style="display: none">texture</div>
 
-The underlying texture for the element. This assumes that the element is of an element type. Setting this value will change the element to an image type.
+The underlying texture for the element. This assumes that the element is of an element type. Setting this value will change the element to an image type. Texture dimensions must be powers of 2.
 
 **Returns**:
 
