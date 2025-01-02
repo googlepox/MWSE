@@ -824,7 +824,12 @@ namespace TES3 {
 	}
 
 	void Reference::setStackSize(int count) {
-		getOrCreateAttachedItemData()->count = count;
+		const auto itemData = getOrCreateAttachedItemData();
+		if (itemData == nullptr) {
+			throw std::runtime_error("This item does not support tes3itemData creation.");
+		}
+
+		itemData->count = count;
 	}
 
 	bool Reference::hasValidBaseObject() const {

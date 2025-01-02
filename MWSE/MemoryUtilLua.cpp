@@ -480,6 +480,13 @@ namespace mwse::lua {
 		strncpy_s(buffer, 512u, string, strlen(string));
 	}
 
+	DWORD addressOf(void* object) {
+		if (object == nullptr) {
+			return NULL;
+		}
+		return *reinterpret_cast<DWORD*>(object);
+	}
+
 	void bindMWSEMemoryUtil() {
 		auto stateHandle = LuaManager::getInstance().getThreadSafeStateHandle();
 		auto& state = stateHandle.state;
@@ -492,6 +499,7 @@ namespace mwse::lua {
 		//
 
 		memory["reinterpret"] = reinterpret;
+		memory["addressOf"] = addressOf;
 
 		//
 		// Read operations.

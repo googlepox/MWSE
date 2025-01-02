@@ -395,6 +395,22 @@ local result = table.removevalue(t, value)
 
 ***
 
+### `table.shuffle`
+<div class="search_terms" style="display: none">shuffle</div>
+
+Shuffles the table in place using the Fisher-Yates algorithm. Passing in table size as the second argument saves the function from having to get it itself.
+
+```lua
+table.shuffle(t, n)
+```
+
+**Parameters**:
+
+* `t` (table)
+* `n` (integer): *Default*: `#t`. The length of the array.
+
+***
+
 ### `table.size`
 <div class="search_terms" style="display: none">size</div>
 

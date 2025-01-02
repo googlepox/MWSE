@@ -26,11 +26,14 @@
 --- 	- [Yes no button](./mwseMCMYesNoButton.md)
 --- 	- [Cycle button](./mwseMCMCycleButton.md)
 --- 	- [Key binder](./mwseMCMKeyBinder.md)
+--- 	- [Mouse binder](./mwseMCMMouseBinder.md)
 --- 	- [Dropdown](./mwseMCMDropdown.md)
 --- 	- [Text field](./mwseMCMTextField.md)
 --- 	- [Paragraph field](./mwseMCMParagraphField.md)
 --- 	- [Slider](./mwseMCMSlider.md)
 --- 	- [Percentage slider](./mwseMCMPercentageSlider.md)
+--- 	- [Color picker](./mwseMCMColorPicker.md)
+--- 	- [Color picker button](./mwseMCMColorPickerButton.md)
 --- 
 --- @class mwseMCMComponent
 --- @field childIndent integer|nil The left padding size in pixels. Used on all the child components.
@@ -39,13 +42,13 @@
 --- @field componentType string For mwseMCMComponent this is set to `"Component"`.
 --- @field createContentsContainer nil|fun(self: mwseMCMComponent, outerContainer: tes3uiElement) This method creates the contents of a component. Not every component implements this method.
 --- @field description string|nil If in a [Sidebar Page](./mwseMCMSideBarPage.md), the description will be shown on mouseover.
---- @field elements mwseMCMButtonElements|mwseMCMCategoryElements|mwseMCMComponentElements|mwseMCMDropdownElements|mwseMCMExclusionsPageElements|mwseMCMFilterPageElements|mwseMCMInfoElements|mwseMCMMouseOverPageElements|mwseMCMPageElements|mwseMCMParagraphFieldElements|mwseMCMSideBarPageElements|mwseMCMSliderElements|mwseMCMTemplateElements|mwseMCMTextFieldElements This dictionary holds all the UI elements of the Component, for easy access.
+--- @field elements mwseMCMButtonElements|mwseMCMCategoryElements|mwseMCMColorPickerButtonElements|mwseMCMColorPickerElements|mwseMCMComponentElements|mwseMCMDropdownElements|mwseMCMExclusionsPageElements|mwseMCMFilterPageElements|mwseMCMInfoElements|mwseMCMMouseOverPageElements|mwseMCMPageElements|mwseMCMParagraphFieldElements|mwseMCMSideBarPageElements|mwseMCMSliderElements|mwseMCMTemplateElements|mwseMCMTextFieldElements This dictionary holds all the UI elements of the Component, for easy access.
 --- @field indent integer The left padding size in pixels. Only used if the `childIndent` isn't set on the parent component.
 --- @field inGameOnly boolean If true, then this component will be disabled when on the main menu.
 --- @field label string The text of the component. Not all component types have a label.
 --- @field mouseOvers tes3uiElement[]|nil This array of UI elements will have an event handler registered to trigger "MCM:MouseOver" event. For more info, see [registerMouseOverElements](#registermouseoverelements) method.
 --- @field paddingBottom integer The bottom border size in pixels. Only used if the `childSpacing` is unset on the parent component.
---- @field parentComponent mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil 
+--- @field parentComponent mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMColorPicker|mwseMCMColorPickerButton|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil 
 --- @field postCreate nil|fun(self: mwseMCMComponent) Custom formatting function to make adjustments to any element saved in `self.elements`.
 --- @field sCancel string Set to the value of `sCancel` GMST.
 --- @field sNo string Set to the value of `sNo` GMST.
@@ -125,8 +128,8 @@ function mwseMCMComponent:getMouseOverText() end
 --- 
 --- `componentType`: string? — *Optional*. No description yet available.
 --- 
---- `parentComponent`: mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil — *Optional*. No description yet available.
---- @return mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton component No description yet available.
+--- `parentComponent`: mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMColorPicker|mwseMCMColorPickerButton|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil — *Optional*. No description yet available.
+--- @return mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMColorPicker|mwseMCMColorPickerButton|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton component No description yet available.
 function mwseMCMComponent:new(data) end
 
 ---Table parameter definitions for `mwseMCMComponent.new`.
@@ -141,7 +144,7 @@ function mwseMCMComponent:new(data) end
 --- @field postCreate nil|fun(self: mwseMCMComponent) *Optional*. Can define a custom formatting function to make adjustments to any element saved in `self.elements`.
 --- @field class string? *Optional*. No description yet available.
 --- @field componentType string? *Optional*. No description yet available.
---- @field parentComponent mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil *Optional*. No description yet available.
+--- @field parentComponent mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMColorPicker|mwseMCMColorPickerButton|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil *Optional*. No description yet available.
 
 --- Prints the component table to the `mwse.log`. If a component is passed, it will be printed. If called without arguments, the component it was called on will be printed.
 --- @param component table? *Default*: `self`. No description yet available.

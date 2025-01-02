@@ -261,6 +261,7 @@ namespace TES3 {
 		float applyFatigueDamage(float damage, float swing, bool alwaysPlayHitVoice = false);
 		void applyJumpFatigueCost() const;
 		float applyDamage_lua(sol::table params);
+		float applyFatigueDamage_lua(float damage, float swing, bool alwaysPlayHitVoice = false);
 		float calcEffectiveDamage_lua(sol::table params);
 		bool doJump(Vector3 velocity, bool applyFatigueCost = true, bool isDefaultJump = false);
 		bool doJump_lua(sol::optional<sol::table> params);
@@ -300,6 +301,7 @@ namespace TES3 {
 		bool aiTurnWhileGreeting(Vector3* lookAt, float minimumFacingDifferenceToStartTurning);
 
 		bool isAffectedByAlchemy(Alchemy * alchemy) const;
+		bool isAffectedBySimilarAlchemy(Alchemy* alchemy) const;
 		bool isAffectedByEnchantment(Enchantment * enchantment) const;
 		bool isAffectedBySpell(Spell * spell) const;
 
@@ -339,8 +341,8 @@ namespace TES3 {
 		float getWidth() const;
 		float getHeight() const;
 
-		bool wearItem(Object* item, ItemData* itemData, bool selectBestCondition, bool selectWorstCondition, bool useEvents);
-		bool equipItem(Object* item, ItemData* itemData = nullptr, bool addItem = false, bool selectBestCondition = false, bool selectWorstCondition = false, bool useEvents = false);
+		bool wearItem(Object* item, ItemData* itemData, bool addItem, bool unknown, bool useEvents);
+		bool equipItem(Object* item, ItemData* itemData = nullptr, bool addItem = false, bool selectBestCondition = false, bool selectWorstCondition = false, bool useEvents = true);
 		bool equip_lua(sol::object arg);
 		bool unequip_lua(sol::table args);
 		bool equipMagic(Object* source, ItemData* itemData = nullptr, bool equipItem = false, bool updateGUI = true);
@@ -478,6 +480,8 @@ namespace TES3 {
 		void setMovementFlagTurnRight(bool value);
 		bool getMovementFlagWalking() const;
 		void setMovementFlagWalking(bool value);
+
+		bool isSpeaking() const;
 
 		bool isAffectedByObject_lua(sol::object object) const;
 

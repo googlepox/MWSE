@@ -108,6 +108,8 @@
 --- @field register fun(eventId: '"magicCasted"', callback: (fun(e: magicCastedEventData): boolean?), options: table?)
 --- @field register fun(eventId: '"magicEffectRemoved"', callback: (fun(e: magicEffectRemovedEventData): boolean?), options: table?)
 --- @field register fun(eventId: '"magicEffectsResolved"', callback: (fun(e: magicEffectsResolvedEventData): boolean?), options: table?)
+--- @field register fun(eventId: '"magicReflect"', callback: (fun(e: magicReflectEventData): boolean?), options: table?)
+--- @field register fun(eventId: '"magicReflected"', callback: (fun(e: magicReflectedEventData): boolean?), options: table?)
 --- @field register fun(eventId: '"magicSelectionChanged"', callback: (fun(e: magicSelectionChangedEventData): boolean?), options: table?)
 --- @field register fun(eventId: '"menuEnter"', callback: (fun(e: menuEnterEventData): boolean?), options: table?)
 --- @field register fun(eventId: '"menuExit"', callback: (fun(e: menuExitEventData): boolean?), options: table?)
@@ -125,6 +127,7 @@
 --- @field register fun(eventId: '"objectCopied"', callback: (fun(e: objectCopiedEventData): boolean?), options: table?)
 --- @field register fun(eventId: '"objectCreated"', callback: (fun(e: objectCreatedEventData): boolean?), options: table?)
 --- @field register fun(eventId: '"objectInvalidated"', callback: (fun(e: objectInvalidatedEventData): boolean?), options: table?)
+--- @field register fun(eventId: '"pickpocket"', callback: (fun(e: pickpocketEventData): boolean?), options: table?)
 --- @field register fun(eventId: '"playGroup"', callback: (fun(e: playGroupEventData): boolean?), options: table?)
 --- @field register fun(eventId: '"playItemSound"', callback: (fun(e: playItemSoundEventData): boolean?), options: table?)
 --- @field register fun(eventId: '"postInfoResponse"', callback: (fun(e: postInfoResponseEventData): boolean?), options: table?)
@@ -207,6 +210,8 @@ function event.isRegistered(eventId, callback, options) end
 --- `filter`: userdata|string|number|tes3activator|tes3alchemy|tes3apparatus|tes3armor|tes3birthsign|tes3bodyPart|tes3book|tes3cell|tes3class|tes3clothing|tes3container|tes3containerInstance|tes3creature|tes3creatureInstance|tes3dialogue|tes3dialogueInfo|tes3door|tes3enchantment|tes3faction|tes3gameSetting|tes3globalVariable|tes3ingredient|tes3land|tes3landTexture|tes3leveledCreature|tes3leveledItem|tes3light|tes3lockpick|tes3magicSourceInstance|tes3misc|tes3npc|tes3npcInstance|tes3pathGrid|tes3probe|tes3quest|tes3race|tes3reference|tes3region|tes3repairTool|tes3script|tes3skill|tes3sound|tes3soundGenerator|tes3spell|tes3startScript|tes3static|tes3weapon|nil — *Optional*. This parameter allows selectively executing the callback function only when a specific condition is met. The exact behavior depends on each event.
 --- 
 --- `priority`: number? — *Optional*. Event callback with higher priority is executed before callback with lower priority. Typically used to make certain mods compatible.
+--- 
+--- `unregisterOnLoad`: boolean? — *Default*: `false`. If this option is set to `true`, the registered function will be unregistered when the next `load` event triggers.
 function event.register(eventId, callback, options) end
 
 ---Table parameter definitions for `event.register`.
@@ -214,6 +219,7 @@ function event.register(eventId, callback, options) end
 --- @field doOnce boolean? *Default*: `false`. If this option is set to `true`, the function registered will be executed only once, and automatically unregistered thereafter.
 --- @field filter userdata|string|number|tes3activator|tes3alchemy|tes3apparatus|tes3armor|tes3birthsign|tes3bodyPart|tes3book|tes3cell|tes3class|tes3clothing|tes3container|tes3containerInstance|tes3creature|tes3creatureInstance|tes3dialogue|tes3dialogueInfo|tes3door|tes3enchantment|tes3faction|tes3gameSetting|tes3globalVariable|tes3ingredient|tes3land|tes3landTexture|tes3leveledCreature|tes3leveledItem|tes3light|tes3lockpick|tes3magicSourceInstance|tes3misc|tes3npc|tes3npcInstance|tes3pathGrid|tes3probe|tes3quest|tes3race|tes3reference|tes3region|tes3repairTool|tes3script|tes3skill|tes3sound|tes3soundGenerator|tes3spell|tes3startScript|tes3static|tes3weapon|nil *Optional*. This parameter allows selectively executing the callback function only when a specific condition is met. The exact behavior depends on each event.
 --- @field priority number? *Optional*. Event callback with higher priority is executed before callback with lower priority. Typically used to make certain mods compatible.
+--- @field unregisterOnLoad boolean? *Default*: `false`. If this option is set to `true`, the registered function will be unregistered when the next `load` event triggers.
 
 --- Triggers an event. This can be used to trigger custom events with specific data.
 --- @param eventId string|tes3.event No description yet available.

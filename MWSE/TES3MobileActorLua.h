@@ -125,9 +125,8 @@ namespace mwse::lua {
 		usertypeDefinition["isWalking"] = sol::property(&TES3::MobileActor::getMovementFlagWalking, &TES3::MobileActor::setMovementFlagWalking);
 
 		// Basic function binding.
-		usertypeDefinition["applyHealthDamage"] = &TES3::MobileActor::applyHealthDamage;
-		usertypeDefinition["applyFatigueDamage"] = &TES3::MobileActor::applyFatigueDamage;
 		usertypeDefinition["applyDamage"] = &TES3::MobileActor::applyDamage_lua;
+		usertypeDefinition["applyFatigueDamage"] = &TES3::MobileActor::applyFatigueDamage_lua;
 		usertypeDefinition["applyJumpFatigueCost"] = &TES3::MobileActor::applyJumpFatigueCost;
 		usertypeDefinition["calcEffectiveDamage"] = &TES3::MobileActor::calcEffectiveDamage_lua;
 		usertypeDefinition["calculateJumpVelocity"] = &TES3::MobileActor::calculateJumpVelocity_lua;
@@ -183,10 +182,12 @@ namespace mwse::lua {
 		usertypeDefinition["isKnockedOut"] = sol::readonly_property(&TES3::MobileActor::isKnockedOut);
 		usertypeDefinition["isParalyzed"] = sol::readonly_property(&TES3::MobileActor::isParalyzed);
 		usertypeDefinition["isReadyingWeapon"] = sol::readonly_property(&TES3::MobileActor::isReadyingWeapon);
+		usertypeDefinition["isSpeaking"] = sol::readonly_property(&TES3::MobileActor::isSpeaking);
 		usertypeDefinition["weaponReady"] = sol::property(&TES3::MobileActor::getWeaponReady, &TES3::MobileActor::setWeaponReady);
 		usertypeDefinition["width"] = sol::readonly_property(&TES3::MobileActor::getWidth);
 
-		// Legacy support for old structures.
+		// Legacy support for functions and old structures.
+		usertypeDefinition["applyHealthDamage"] = &TES3::MobileActor::applyHealthDamage;
 		usertypeDefinition["activeMagicEffects"] = sol::readonly_property(&TES3::MobileActor::getActiveMagicEffects_legacy);
 		usertypeDefinition["activeMagicEffectCount"] = sol::readonly_property(&TES3::MobileActor::getActiveMagicEffectCount_legacy);
 	}

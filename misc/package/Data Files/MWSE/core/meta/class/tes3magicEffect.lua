@@ -38,7 +38,7 @@
 --- @field lightingRed number The amount of red lighting to use when lighting projectiles.
 --- @field name string *Read-only*. Player-facing name of the effect.
 --- @field nonRecastable boolean Access to the base flag that determines if this effect can be refreshed by recasting.
---- @field particleTexture boolean *Read-only*. The path to use for the particle effect texture.
+--- @field particleTexture string *Read-only*. The path to use for the particle effect texture.
 --- @field school tes3.magicSchool The school that the effect is associated with. Maps to [`tes3.magicSchool`](https://mwse.github.io/MWSE/references/magic-schools/) constants.
 --- @field size number Controls how much the visual effect scales with its magnitude.
 --- @field sizeCap number The maximum possible size of the spell projectile with this effect.

@@ -89,6 +89,7 @@ function Dropdown:createDropdown()
 
 			listItem:register(tes3.uiEvent.mouseClick, function()
 				self:selectOption(option)
+				dropdown:getTopLevelMenu():updateLayout()
 			end)
 		end
 		self.elements.dropdown = dropdown

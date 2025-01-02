@@ -20,10 +20,13 @@
     <ClInclude Include="LuaCalcTouchSpellConeEvent.h" />
     <ClInclude Include="LuaDialogueFilteredEvent.h" />
     <ClInclude Include="LuaKeyframesLoadedEvent.h" />
+    <ClInclude Include="LuaMagicReflectedEvent.h" />
+    <ClInclude Include="LuaMagicReflectEvent.h" />
     <ClInclude Include="LuaMagicSelectionChangedEvent.h" />
     <ClInclude Include="LuaMusicChangeTrackEvent.h" />
     <ClInclude Include="LuaObjectCopiedEvent.h" />
     <ClInclude Include="LuaObjectCreatedEvent.h" />
+    <ClInclude Include="LuaPickpocketEvent.h" />
     <ClInclude Include="LuaShieldBlockedEvent.h" />
     <ClInclude Include="LuaSimulatedEvent.h" />
     <ClInclude Include="LuaStartGlobalScriptEvent.h" />
@@ -31,6 +34,8 @@
     <ClInclude Include="NIAccumulator.h" />
     <ClInclude Include="NIAnimationData.h" />
     <ClInclude Include="NIAnimationKey.h" />
+    <ClInclude Include="NIBoundingVolumeLua.h" />
+    <ClInclude Include="NIBSAnimationNodeLua.h" />
     <ClInclude Include="NIPathController.h" />
     <ClInclude Include="NISortAdjustNode.h" />
     <ClInclude Include="TES3AnimationGroupLua.h" />
@@ -640,6 +645,8 @@
     <ClCompile Include="LuaLoadGameEvent.cpp" />
     <ClCompile Include="LuaMagicCastedEvent.cpp" />
     <ClCompile Include="LuaMagicEffectRemovedEvent.cpp" />
+    <ClCompile Include="LuaMagicReflectedEvent.cpp" />
+    <ClCompile Include="LuaMagicReflectEvent.cpp" />
     <ClCompile Include="LuaMagicSelectionChangedEvent.cpp" />
     <ClCompile Include="LuaMenuStateEvent.cpp" />
     <ClCompile Include="LuaMeshLoadedEvent.cpp" />
@@ -664,6 +671,7 @@
     <ClCompile Include="LuaObjectFilteredEvent.cpp" />
     <ClCompile Include="LuaObjectInvalidatedEvent.cpp" />
     <ClCompile Include="LuaPickLockEvent.cpp" />
+    <ClCompile Include="LuaPickpocketEvent.cpp" />
     <ClCompile Include="LuaPlayAnimationGroupEvent.cpp" />
     <ClCompile Include="LuaPlayItemSoundEvent.cpp" />
     <ClCompile Include="LuaPostInfoResponseEvent.cpp" />
@@ -723,6 +731,9 @@
     <ClCompile Include="NIAnimationKey.cpp" />
     <ClCompile Include="NIBillboardNode.cpp" />
     <ClCompile Include="NIBinaryStream.cpp" />
+    <ClCompile Include="NIBoundingVolumeLua.cpp" />
+    <ClCompile Include="NIBSAnimationNode.cpp" />
+    <ClCompile Include="NIBSAnimationNodeLua.cpp" />
     <ClCompile Include="NICamera.cpp" />
     <ClCompile Include="NICollisionGroup.cpp" />
     <ClCompile Include="NICollisionGroupLua.cpp" />

@@ -151,6 +151,31 @@ function dofile(path)
 	error("dofile: Could not resolve path " .. path)
 end
 
+local function addUserFriendlyNameToSolType(friendlyName, metatable)
+	metatable.__type.friendlyName = friendlyName
+end
+
+for friendlyName, maybeUserdataType in pairs(_G) do
+	pcall(addUserFriendlyNameToSolType, friendlyName, maybeUserdataType)
+end
+
+local function getUserdataTypeName(variable)
+    return variable.__type.friendlyName
+end
+
+local originalType = type
+function type(variable)
+	local baseType = originalType(variable)
+	if (baseType == "userdata") then
+		local success, typeName = pcall(getUserdataTypeName, variable)
+		if (success) then
+			return baseType, typeName
+		end
+	end
+	return baseType
+end
+
+
 -------------------------------------------------
 -- Global includes
 -------------------------------------------------
@@ -233,41 +258,6 @@ function mwse.loadTranslations(mod)
 	-- We create a wrapper around i18n prefixing with the mod key.
 	return setmetatable({ mod = mod }, i18nWrapper)
 end
-
-
--------------------------------------------------
--- Extend base API: math
--------------------------------------------------
-
--- Seed random number generator.
-math.randomseed(os.time())
-
-function math.lerp(v0, v1, t)
-	return (1 - t) * v0 + t * v1;
-end
-
-function math.clamp(value, low, high)
-	if (low > high) then
-		low, high = high, low
-	end
-	return math.max(low, math.min(high, value))
-end
-
-function math.remap(value, lowIn, highIn, lowOut, highOut)
-	return lowOut + (value - lowIn) * (highOut - lowOut) / (highIn - lowIn)
-end
-
-function math.round(value, digits)
-	local mult = 10 ^ (digits or 0)
-	return math.floor(value * mult + 0.5) / mult
-end
-
-function math.isclose(a, b, absoluteTolerance, relativeTolerance)
-	absoluteTolerance = absoluteTolerance or math.epsilon
-	relativeTolerance = relativeTolerance or 1e-9
-	return math.abs(a-b) <= math.max(relativeTolerance * math.max(math.abs(a), math.abs(b)), absoluteTolerance)
-end
-
 
 -------------------------------------------------
 -- Extend base API: table
@@ -465,6 +455,14 @@ function table.wrapindex(t, index)
 		newIndex = size
 	end
 	return newIndex
+end
+
+function table.shuffle(t, n)
+	n = n or #t
+	for i = n, 2, -1 do
+		local j = math.random(i)
+		t[i], t[j] = t[j], t[i]
+	end
 end
 
 
@@ -885,7 +883,7 @@ function mwse.log(str, ...)
 	print(tostring(str):format(...))
 end
 
--- helper function for `mwse.loadConfig`. 
+-- helper function for `mwse.loadConfig`.
 -- this function is responsible for:
 -- 1) restoring numeric keys (i.e. keys that should be numbers, but were turned into strings by `json.savefile`)
 -- 2) adding missing values to `config` that are present in `defaultConfig`
@@ -927,7 +925,7 @@ end
 
 function mwse.loadConfig(fileName, defaults)
 	local result = json.loadfile(string.format("config\\%s", fileName))
-	
+
 	if not result and not defaults then return end
 
 	result = result or {} -- make sure the user gets something
@@ -1032,6 +1030,12 @@ local safeObjectHandle = require("mwse_safeObjectHandle")
 function tes3.makeSafeObjectHandle(object)
 	return safeObjectHandle.new(object)
 end
+
+-------------------------------------------------
+-- Extend base API: math
+-------------------------------------------------
+
+dofile("math")
 
 
 -------------------------------------------------

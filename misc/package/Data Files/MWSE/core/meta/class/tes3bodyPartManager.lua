@@ -4,9 +4,11 @@
 --- @meta
 --- A game object which holds information about body parts.
 --- @class tes3bodyPartManager
---- @field activeBodyParts table<tes3.activeBodyPartLayer, table<tes3.activeBodyPart, tes3bodyPartManagerActiveBodyPart>> *Read-only*. Access to the reference's [`tes3bodyPartManagerActiveBodyPart`](https://mwse.github.io/MWSE/types/tes3bodyPartManagerActiveBodyPart/) objects. It's a 2-dimensional table, with first dimension index values from [`tes3.activeBodyPartLayer`](https://mwse.github.io/MWSE/references/active-body-part-layers/) namespace, while its second dimension indexes are values from [`tes3.activeBodyPart`](https://mwse.github.io/MWSE/references/active-body-parts/) namespace.
 --- @field animationPhase number *Read-only*. 
---- @field attachNodes table<tes3.bodyPartAttachment, tes3bodyPartManagerAttachNode> *Read-only*. The access to the reference's attach node objects. Indexes of that table are values from [`tes3.bodyPartAttachment`](https://mwse.github.io/MWSE/references/body-part-attachments/) namespace.
+--- @field attachNodes tes3bodyPartManagerAttachNode[] *Read-only*. An array-style table with access to the reference's attach node objects.
+--- 
+--- !!! note
+--- 	This array is 1-indexed. The array indices correspond to the [`tes3.bodyPartAttachment`](https://mwse.github.io/MWSE/references/body-part-attachments/) table plus 1 to account for Lua's 1-based array indexing. In other words `bodyPartManager.attachNodes[tes3.bodyPartAttachment.leftHand + 1]` returns the `tes3bodyPartManagerAttachNode` object corresponding to the left hand.
 --- @field reference tes3reference *Read-only*. The access to the reference this body part manager operates for.
 tes3bodyPartManager = {}
 

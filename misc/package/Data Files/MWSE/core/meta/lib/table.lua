@@ -145,6 +145,11 @@ function table.new(narray, nhash) end
 --- @return boolean result No description yet available.
 function table.removevalue(t, value) end
 
+--- Shuffles the table in place using the Fisher-Yates algorithm. Passing in table size as the second argument saves the function from having to get it itself.
+--- @param t table No description yet available.
+--- @param n integer? *Default*: `#t`. The length of the array.
+function table.shuffle(t, n) end
+
 --- Returns the number of elements inside the table. Unlike the length operator (#) this will work with any table.
 --- @param t table No description yet available.
 --- @return number result No description yet available.

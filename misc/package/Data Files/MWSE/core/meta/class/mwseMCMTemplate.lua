@@ -15,7 +15,7 @@
 --- 
 --- Use `template:saveOnClose(configFilename, configTable)` to assign a simple save function to onClose. If you want to do more on closing, assign a custom function to `onClose` and call `mwse.saveConfig(configFilename, configTable)` when you want to save.
 --- 
---- @field onSearch nil|fun(searchText: string): boolean A custom search handler function. This function should return true if this mod Template should show up in search results for given `searchText`.
+--- @field onSearch nil|fun(searchText: string): boolean A custom search handler function. This function should return true if this mod Template should show up in search results for given `searchText` (it's in lowercase).
 --- @field pages mwseMCMExclusionsPage[]|mwseMCMFilterPage[]|mwseMCMMouseOverPage[]|mwseMCMPage[]|mwseMCMSideBarPage[] Pages in this Template.
 --- @field searchChildDescriptions boolean If true, when the user searches the MCM list, all the pages and settings in this MCM template will be searched over. The matching will be performed on setting `description` fields.
 --- @field searchChildLabels boolean If true, when the user searches the MCM list, all the pages and settings in this MCM template will be searched over. The matching will be performed on setting `label` and `text` fields.
@@ -345,7 +345,7 @@ function mwseMCMTemplate:createTabsBlock(parentBlock) end
 --- 
 --- `searchChildDescriptions`: boolean? — *Default*: `true`. If true, default search handler will search through all the page and setting `description` fields in this MCM template.
 --- 
---- `onSearch`: nil|fun(searchText: string): boolean — *Optional*. A custom search handler function. This function should return true if this mod Template should show up in search results for given `searchText`.
+--- `onSearch`: nil|fun(searchText: string): boolean — *Optional*. A custom search handler function. This function should return true if this mod Template should show up in search results for given `searchText` (it's in lowercase).
 --- 
 --- `pages`: mwseMCMPage.new.data[]? — *Optional*. You can create pages for the template directly here. The entries in the array must specify the class of the page.
 --- 
@@ -363,7 +363,7 @@ function mwseMCMTemplate:createTabsBlock(parentBlock) end
 --- 
 --- `class`: string? — *Optional*. No description yet available.
 --- 
---- `parentComponent`: mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil — *Optional*. No description yet available.
+--- `parentComponent`: mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMColorPicker|mwseMCMColorPickerButton|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil — *Optional*. No description yet available.
 --- @return mwseMCMTemplate template No description yet available.
 function mwseMCMTemplate:new(data) end
 
@@ -378,7 +378,7 @@ function mwseMCMTemplate:new(data) end
 --- @field onClose nil|fun(modConfigContainer: tes3uiElement) *Optional*. Set this to a function which will be called when the menu is closed. Useful for saving variables, such as TableVariable.
 --- @field searchChildLabels boolean? *Default*: `true`. If true, default search handler will search through all the page and setting `label` and `text` fields in this MCM template.
 --- @field searchChildDescriptions boolean? *Default*: `true`. If true, default search handler will search through all the page and setting `description` fields in this MCM template.
---- @field onSearch nil|fun(searchText: string): boolean *Optional*. A custom search handler function. This function should return true if this mod Template should show up in search results for given `searchText`.
+--- @field onSearch nil|fun(searchText: string): boolean *Optional*. A custom search handler function. This function should return true if this mod Template should show up in search results for given `searchText` (it's in lowercase).
 --- @field pages mwseMCMPage.new.data[]? *Optional*. You can create pages for the template directly here. The entries in the array must specify the class of the page.
 --- @field indent integer? *Default*: `12`. The left padding size in pixels. Only used if the `childIndent` isn't set on the parent component.
 --- @field childIndent integer? *Optional*. The left padding size in pixels. Used on all the child components.
@@ -387,7 +387,7 @@ function mwseMCMTemplate:new(data) end
 --- @field inGameOnly boolean? *Default*: `false`. No description yet available.
 --- @field postCreate nil|fun(self: mwseMCMTemplate) *Optional*. Can define a custom formatting function to make adjustments to any element saved in `self.elements`.
 --- @field class string? *Optional*. No description yet available.
---- @field parentComponent mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil *Optional*. No description yet available.
+--- @field parentComponent mwseMCMActiveInfo|mwseMCMBinder|mwseMCMButton|mwseMCMCategory|mwseMCMColorPicker|mwseMCMColorPickerButton|mwseMCMComponent|mwseMCMCycleButton|mwseMCMDropdown|mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMHyperlink|mwseMCMInfo|mwseMCMKeyBinder|mwseMCMMouseBinder|mwseMCMMouseOverInfo|mwseMCMMouseOverPage|mwseMCMOnOffButton|mwseMCMPage|mwseMCMParagraphField|mwseMCMPercentageSlider|mwseMCMSetting|mwseMCMSideBarPage|mwseMCMSideBySideBlock|mwseMCMSlider|mwseMCMTemplate|mwseMCMTextField|mwseMCMYesNoButton|nil *Optional*. No description yet available.
 
 --- Performs searching routine for given `searchText`.
 --- @param searchText string No description yet available.
@@ -404,7 +404,7 @@ function mwseMCMTemplate:register() end
 --- @param config unknown No description yet available.
 function mwseMCMTemplate:saveOnClose(fileName, config) end
 
---- This method assigns a custom search handler for the Template. This function should return true if this mod should show up in search results for given `searchText`.
+--- This method assigns a custom search handler for the Template. This function should return true if this mod should show up in search results for given `searchText` (it's in lowercase).
 --- @param callback nil|fun(searchText: string): boolean No description yet available.
 function mwseMCMTemplate:setCustomSearchHandler(callback) end
 

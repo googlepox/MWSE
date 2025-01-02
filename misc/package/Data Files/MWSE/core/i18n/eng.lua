@@ -40,4 +40,12 @@ return {
 	["Default"] = "Default",
 	["Reset"] = "Reset",
 	["Are you sure you want to reset all the settings on this page to their default values? This action cannot be undone."] = "Are you sure you want to reset all the settings on this page to their default values? This action cannot be undone.",
+	["Color Picker Menu"] = "Color Picker Menu",
+	["Current"] = "Current",
+	["Original"] = "Original",
+	["Copy"] = "Copy",
+	["%%q copied to clipboard."] = "%%q copied to clipboard.",
+	["RGB: #"] = "RGB: #",
+	["ARGB: #"] = "ARGB: #",
+	["Choose"] = "Choose",
 }

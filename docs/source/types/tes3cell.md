@@ -324,11 +324,11 @@ The modification state of the object since the last save.
 ### `name`
 <div class="search_terms" style="display: none">name</div>
 
-The name and id of the cell. See also `displayName` and `editorName`.
+The name and id of the cell. Only available on interior cells. See also `displayName` and `editorName`.
 
 **Returns**:
 
-* `result` (string)
+* `result` (string, nil)
 
 ***
 

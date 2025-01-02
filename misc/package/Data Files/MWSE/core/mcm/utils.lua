@@ -54,7 +54,7 @@ function utils.getComponentClass(className)
 	if not luaPath then return end
 	class = include(luaPath)
 	if not class or type(class) ~= "table" then
-		mwse.log('[MCM: ERROR] Could not find the filepath of "%s"!\n%s', debug.traceback())
+		mwse.log('[MCM: ERROR] Could not find the filepath of "%s"!\n%s', luaPath, debug.traceback())
 		return
 	end
 
@@ -78,7 +78,7 @@ function utils.getVariableClass(className)
 	if not luaPath then return end
 	class = include(luaPath)
 	if not class or type(class) ~= "table" then
-		mwse.log('[MCM: ERROR] Could not find the filepath of "%s"!\n%s', debug.traceback())
+		mwse.log('[MCM: ERROR] Could not find the filepath of "%s"!\n%s', luaPath, debug.traceback())
 		return
 	end
 
@@ -128,7 +128,7 @@ function utils.getOrInheritVariableData(setting)
 			restartRequiredMessage = setting.restartRequiredMessage
 		})
 	-- Variable provided? Let's update it for backwards compatibility.
-	elseif setting.variable ~= nil then
+	elseif type(setting.variable) == "table" then
 		setting.variable.defaultSetting = defaultSetting
 		setting.variable.converter = setting.variable.converter or setting.converter
 		--- @diagnostic disable-next-line: param-type-mismatch

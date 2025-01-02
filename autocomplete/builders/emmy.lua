@@ -351,8 +351,8 @@ local function build(package)
 			file:write(string.format("--- @class %slib\n", package.namespace))
 		elseif (package.type == "class") then
 			file:write(string.format(
-				"--- @class %s%s\n", 
-				package.key, 
+				"--- @class %s%s\n",
+				package.key,
 				package.inherits and (" : " .. buildParentChain(package.inherits)) or ""
 			))
 		elseif (package.type == "event") then
@@ -468,8 +468,6 @@ local function build(package)
 	-- Bring in external packages and build sub-libraries.
 	if (package.type == "lib") then
 		buildExternalRequires(package, file)
-
-		-- NOTE: This does not appear to be used anywhere.
 		if (package.libs) then
 			lfs.mkdir(lfs.join(outDir, package.key))
 			for _, lib in pairs(package.libs) do

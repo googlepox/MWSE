@@ -6,7 +6,9 @@
 	More information: https://github.com/MWSE/MWSE/tree/master/docs
 -->
 
-A representation of a quest, with associated dialogue and info.
+A representation of a journal quest log, with associated dialogue(s), infos and quest flags. Quest tracking was added by Tribunal as a separate system on top of the dialogue system. It had to add tracking to existing quests as well as new ones, but its design is not seamlessly integrated.
+
+Quests have a name, separate from the dialogue id, which is derived from a specially flagged info (the Quest Name flag) in the dialogue infos. Multiple dialogue topics with the same name are combined into one quest. The overall quest state of active or completed is tracked by the quest.
 
 This type inherits the following: [tes3baseObject](../types/tes3baseObject.md)
 ## Properties
@@ -74,6 +76,39 @@ The blocked state of the object.
 **Returns**:
 
 * `result` ([tes3dialogueInfo](../types/tes3dialogueInfo.md)[])
+
+***
+
+### `isActive`
+<div class="search_terms" style="display: none">isactive, active</div>
+
+If the quest is active. This occurs when the quest has started but not finished yet.
+
+**Returns**:
+
+* `result` (boolean)
+
+***
+
+### `isFinished`
+<div class="search_terms" style="display: none">isfinished, finished</div>
+
+If the quest has finished. This is when the quest has reached a journal entry with the finished flag.
+
+**Returns**:
+
+* `result` (boolean)
+
+***
+
+### `isStarted`
+<div class="search_terms" style="display: none">isstarted, started</div>
+
+If the quest has started. This occurs when at least one journal entry has been added.
+
+**Returns**:
+
+* `result` (boolean)
 
 ***
 

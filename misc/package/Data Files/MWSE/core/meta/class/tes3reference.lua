@@ -7,7 +7,25 @@
 --- For example, many doors may share the same base object. However, each door reference might have a different owner, different lock/trap statuses, etc. that make the object unique.
 --- @class tes3reference : tes3object, tes3baseObject
 --- @field activationReference tes3reference The current reference, if any, that this reference will activate.
---- @field attachments table<string, tes3bodyPartManager|tes3itemData|tes3lightNode|tes3lockNode|tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer|tes3reference|tes3travelDestinationNode|tes3animationData> *Read-only*. A table with friendly named access to all supported attachments.
+--- @field attachments table<string, tes3bodyPartManager|tes3itemData|tes3lightNode|tes3lockNode|tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer|tes3reference|tes3travelDestinationNode|tes3animationData> *Read-only*. A table with friendly named access to all supported attachments. See the table below for available keys in this table.
+--- 
+--- Key               | Attachment type | Description
+--- ----------------- | --------------- | -----------
+--- actor             | [tes3mobileActor](https://mwse.github.io/MWSE/types/tes3mobileActor/) | The associated mobile object, if applicable.
+--- animation         | [tes3animationData](https://mwse.github.io/MWSE/types/tes3animationData/) |
+--- bodyPartManager   | [tes3bodyPartManager](https://mwse.github.io/MWSE/types/tes3bodyPartManager/) |
+--- leveledBase       | [tes3reference](https://mwse.github.io/MWSE/types/tes3reference/) |
+--- light             | [tes3lightNode](https://mwse.github.io/MWSE/types/tes3lightNode/) | The dynamic light attachment.
+--- lock              | [tes3lockNode](https://mwse.github.io/MWSE/types/tes3lockNode/) | Only present on locked containers or doors.
+--- travelDestination | [tes3travelDestinationNode](https://mwse.github.io/MWSE/types/tes3travelDestinationNode/) | Only present on teleport doors.
+--- variables         | [tes3itemData](https://mwse.github.io/MWSE/types/tes3itemData/) | Only present on items when needed e.g. the item is fully repaired.
+--- 
+--- 
+--- ```lua
+--- -- Accessing the attached tes3animationData
+--- local animData = myRef.attachments.animation
+--- ```
+--- 
 --- @field baseObject tes3activator|tes3alchemy|tes3apparatus|tes3armor|tes3bodyPart|tes3book|tes3clothing|tes3container|tes3containerInstance|tes3creature|tes3creatureInstance|tes3door|tes3ingredient|tes3leveledCreature|tes3leveledItem|tes3light|tes3lockpick|tes3misc|tes3npc|tes3npcInstance|tes3probe|tes3repairTool|tes3static|tes3weapon *Read-only*. This is similar to the object field, but is guaranteed to provide the base-most object. If object is an actor clone, the base actor will be given instead.
 --- @field bodyPartManager tes3bodyPartManager|nil *Read-only*. Access to the reference's body part manager, if available. Typically this is only available on NPC references.
 --- @field cell tes3cell *Read-only*. The cell that the reference is currently in.
@@ -43,7 +61,7 @@
 --- 
 --- @field previousNode tes3reference *Read-only*. The previous reference in the parent reference list.
 --- @field rightDirection tes3vector3 *Read-only*. The normalized right or X direction vector of the reference.
---- @field sceneNode niBillboardNode|niCollisionSwitch|niNode|niSortAdjustNode|niSwitchNode|nil *Read-only*. The scene graph node that the reference uses for rendering.
+--- @field sceneNode niBSAnimationNode|niBSParticleNode|niBillboardNode|niCollisionSwitch|niNode|niSortAdjustNode|niSwitchNode|nil *Read-only*. The scene graph node that the reference uses for rendering.
 --- @field sourceFormId number No description yet available.
 --- @field sourceModId number No description yet available.
 --- @field stackSize number Access to the size of a stack, if the reference represents one or more items.

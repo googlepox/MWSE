@@ -24,3 +24,7 @@
 --- @field prevMovementFlags integer Access to the root mobile object movement flags from the previous frame, represented as an integer. Should not be accessed directly.
 --- @field reference tes3reference *Read-only*. Access to the reference object for the mobile, if any.
 --- @field velocity tes3vector3 A vector that represents the 3D velocity of the object.
+--- 
+--- !!! tip
+--- 	To change the velocity of an actor change this property during the [calcMoveSpeed](https://mwse.github.io/MWSE/events/calcMoveSpeed/) event.
+--- 

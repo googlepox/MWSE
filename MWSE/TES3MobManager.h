@@ -40,6 +40,12 @@ namespace TES3 {
 		float getAIDistanceScale() const;
 		void setAIDistanceScale(float scalar);
 
+		//
+		// Custom functions.
+		//
+
+		sol::table getAllMobileActors(sol::this_state ts);
+		sol::table getAllPlanners(sol::this_state ts);
 	};
 	static_assert(sizeof(ProcessManager) == 0x830, "TES3::ProcessManager failed size validation");
 

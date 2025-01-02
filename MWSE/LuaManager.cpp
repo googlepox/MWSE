@@ -168,6 +168,8 @@
 #include "TES3WeatherLua.h"
 #include "TES3WorldControllerLua.h"
 
+#include "NIBoundingVolumeLua.h"
+#include "NIBSAnimationNodeLua.h"
 #include "NICameraLua.h"
 #include "NICollisionGroupLua.h"
 #include "NICollisionSwitchLua.h"
@@ -245,9 +247,12 @@
 #include "LuaLeveledCreaturePickedEvent.h"
 #include "LuaLeveledItemPickedEvent.h"
 #include "LuaLevelUpEvent.h"
+#include "LuaLoadGameEvent.h"
 #include "LuaLoadedGameEvent.h"
 #include "LuaMagicCastedEvent.h"
 #include "LuaMagicEffectRemovedEvent.h"
+#include "LuaMagicReflectEvent.h"
+#include "LuaMagicReflectedEvent.h"
 #include "LuaMenuStateEvent.h"
 #include "LuaMobileObjectActivatedEvent.h"
 #include "LuaMobileObjectDeactivatedEvent.h"
@@ -260,6 +265,7 @@
 #include "LuaObjectCopiedEvent.h"
 #include "LuaObjectCreatedEvent.h"
 #include "LuaObjectInvalidatedEvent.h"
+#include "LuaPickpocketEvent.h"
 #include "LuaPlayItemSoundEvent.h"
 #include "LuaPostInfoResponseEvent.h"
 #include "LuaPotionBrewedEvent.h"
@@ -562,6 +568,8 @@ namespace mwse::lua {
 		bindTES3UIWidgets();
 
 		// Bind NI data types.
+		bindNIBoundingVolume();
+		bindNIBSAnimationNode();
 		bindNICamera();
 		bindNICollisionGroup();
 		bindNICollisionSwitch();
@@ -940,7 +948,22 @@ namespace mwse::lua {
 		tes3::startNewGame();
 	}
 
-	void __fastcall OnNewGameViaStartingCell(TES3::MobManager* mobManager) {
+	const auto TES3_Game_initPlayerAndStartScripts = reinterpret_cast<void(__thiscall*)(TES3::Game*)>(0x419A90);
+
+	void __fastcall OnNewGameViaStartingCell1(TES3::Game* game) {
+		// Call overwritten code.
+		// It must run before the event, so that the player and scripts are resolved before being exposed to lua.
+		TES3_Game_initPlayerAndStartScripts(game);
+
+		// Fire off the load event.
+		LuaManager& luaManager = LuaManager::getInstance();
+		auto stateHandle = luaManager.getThreadSafeStateHandle();
+		if (event::LoadGameEvent::getEventEnabled()) {
+			stateHandle.triggerEvent(new event::LoadGameEvent(nullptr, false, true));
+		}
+	}
+
+	void __fastcall OnNewGameViaStartingCell2(TES3::MobManager* mobManager) {
 		// Call overwritten code.
 		mobManager->checkPlayerDistance();
 
@@ -1198,7 +1221,9 @@ namespace mwse::lua {
 
 	float __fastcall OnApplyFatigueDamageFromAttack(TES3::MobileActor* mobileActor, TES3::MobileActor* attacker, float damage, float swing, bool alwaysPlayHitVoice) {
 		mwse::lua::event::DamageHandToHandEvent::m_Attacker = attacker;
+		mwse::lua::event::DamageHandToHandEvent::m_Source = "attack";
 		auto result = mobileActor->applyFatigueDamage(damage, swing, alwaysPlayHitVoice);
+		mwse::lua::event::DamageHandToHandEvent::m_Source = nullptr;
 		mwse::lua::event::DamageHandToHandEvent::m_Attacker = nullptr;
 		return result;
 	}
@@ -1500,7 +1525,7 @@ namespace mwse::lua {
 		auto enchantedFrom = getValueFromEnchantingMenu<TES3::Item>(ui_id_ptr_MenuEnchantment_Item, ui_id_ptr_MenuEnchantment_SoulGem);
 		auto soulGemUsed = getValueFromEnchantingMenu<TES3::Misc>(ui_id_ptr_MenuEnchantment_SoulGem, ui_id_ptr_MenuEnchantment_SoulGem);
 		auto soulGemItemData = getValueFromEnchantingMenu<TES3::ItemData>(ui_id_ptr_MenuEnchantment_SoulGem, ui_id_ptr_MenuEnchantment_Item);
-		auto soulUsed = soulGemItemData ? soulGemItemData->soul : nullptr;
+		auto soulUsed = soulGemItemData ? soulGemItemData->getSoul() : nullptr;
 
 		// TODO: Allow item data to be accessed or transferred to the newly enchanted item.
 		//auto enchantedFromItemData = getValueFromEnchantingMenu<TES3::ItemData>(ui_id_ptr_MenuEnchantment_Item, ui_id_ptr_MenuEnchantment_Item);
@@ -2695,7 +2720,7 @@ namespace mwse::lua {
 		return disabledPathItt != disabledMarkers.end();
 	}
 
-	void LuaManager::gatherMainModScripts(const std::string_view& path, bool core, const std::string_view& filename) {
+	void LuaManager::gatherMainModScripts(const std::string_view& path, bool core, const std::string_view& scriptFilename) {
 		if (!std::filesystem::exists(path)) {
 			return;
 		}
@@ -2703,36 +2728,48 @@ namespace mwse::lua {
 		// Do some precomputing for storing and calculating active lua mods.
 		sol::table luaMWSE = luaState["mwse"];
 		sol::table activeLuaMods = luaMWSE["activeLuaMods"];
+		bool isLegacy = !string::equal(scriptFilename, "main.lua");
 
 		auto subclassOrder = 0u;
-		for (const auto& p : std::filesystem::recursive_directory_iterator(path, std::filesystem::directory_options::follow_directory_symlink)) {
+		for (auto it = std::filesystem::recursive_directory_iterator(path, std::filesystem::directory_options::follow_directory_symlink);
+			 it != std::filesystem::recursive_directory_iterator();
+			 ++it) {
+
 			try {
-				if (p.path().filename() == filename) {
+				auto filename = it->path().filename();
+				
+				if (filename == ".git") {
+					// Skip .git subdirectories, as scanning their contents are likely to take the path length over the path limit and crash.
+					it.disable_recursion_pending();
+					continue;
+				}
+
+				if (filename == scriptFilename) {
 					// If a parent directory is marked .disabled, ignore files in it.
-					const auto pathString = p.path().string();
+					const auto pathString = it->path().string();
 					if (isPathDisabled(pathString)) {
 						log::getLog() << "[LuaManager] Skipping mod initializer in disabled directory: " << pathString << std::endl;
 						continue;
 					}
 
 					// Get a version of its path as a key.
-					auto luaModKey = pathString.substr(path.length() + 1, pathString.length() - path.length() - filename.length() - 2);
+					auto luaModKey = pathString.substr(path.length() + 1, pathString.length() - path.length() - scriptFilename.length() - 2);
 					std::replace(luaModKey.begin(), luaModKey.end(), '\\', '.');
 					string::to_lower(luaModKey);
 
 					// Check for key conflicts.
 					if (activeLuaMods[luaModKey] != sol::nil) {
-						log::getLog() << "[LuaManager] Skipping mod with duplicate key '" << luaModKey << "' in direcotry: " << pathString << std::endl;
+						log::getLog() << "[LuaManager] Skipping mod with duplicate key '" << luaModKey << "' in directory: " << pathString << std::endl;
 						continue;
 					}
 
 					// Prepare runtime data.
 					auto runtime = luaState.create_table();
-					runtime["path"] = p.path().string();
-					runtime["parent_path"] = p.path().parent_path().string();
+					runtime["path"] = pathString;
+					runtime["parent_path"] = it->path().parent_path().string();
 					runtime["key"] = luaModKey;
 					runtime["core_mod"] = core;
-					runtime["legacy_mod"] = !string::equal(filename, "main.lua");
+					runtime["legacy_mod"] = isLegacy;
 					runtime["load_std_order"] = subclassOrder++;
 
 					activeLuaMods[luaModKey] = runtime;
@@ -2766,6 +2803,20 @@ namespace mwse::lua {
 		}
 
 		return result;
+	}
+
+	const auto TES3_ui_MenuMap_updateLocalPlayer = reinterpret_cast<bool(__cdecl*)(TES3::UI::Element*, int, int, int, TES3::UI::Element*)>(0x5EB760);
+	void __cdecl OnRefreshedLocalMap(TES3::UI::Element* menu, int eventId, int data0, int data1, TES3::UI::Element* source) {
+		TES3_ui_MenuMap_updateLocalPlayer(menu, eventId, data0, data1, source);
+
+		if (event::UiRefreshedEvent::getEventEnabled()) {
+			const auto& TES3_UI_ID_MenuMap_local = *reinterpret_cast<TES3::UI::UI_ID*>(0x7D4640);
+			auto localMap = menu->findChild(TES3_UI_ID_MenuMap_local);
+
+			if (localMap) {
+				LuaManager::getInstance().getThreadSafeStateHandle().triggerEvent(new event::UiRefreshedEvent(localMap));
+			}
+		}
 	}
 
 	//
@@ -3365,7 +3416,7 @@ namespace mwse::lua {
 		// Change the soul to the aliased creature. The item will be destroyed (or the value unset) soon,
 		// but we must make sure that future events don't require the original value.
 		auto itemData = reinterpret_cast<TES3::ItemData*>(value->ptrValue);
-		auto actor = itemData->soul;
+		auto actor = itemData->getSoul();
 		if (actor->objectType == TES3::ObjectType::Creature) {
 			PatchGetAliasedSoulValueProperty_AliasedCreature->soul = static_cast<TES3::Creature*>(actor)->getSoulValue();
 			itemData->soul = PatchGetAliasedSoulValueProperty_AliasedCreature;
@@ -3387,7 +3438,7 @@ namespace mwse::lua {
 	constexpr size_t PatchGetSoulValueForTooltip_LoadObject_Size = 0x3;
 
 	int __fastcall PatchGetSoulValueForTooltip(TES3::ItemData* itemData, TES3::Misc* soulGem) {
-		auto actor = itemData->soul;
+		auto actor = itemData->getSoul();
 
 		int baseValue = 0;
 		if (actor->objectType == TES3::ObjectType::Creature) {
@@ -3417,7 +3468,7 @@ namespace mwse::lua {
 	constexpr size_t PatchGetSoulValueForTooltip_NoMCPLoader_Size = 0x6;
 
 	int __fastcall PatchGetSoulValueForTooltip_NoMCP(TES3::ItemData* itemData, TES3::Misc* soulGem) {
-		auto actor = itemData->soul;
+		auto actor = itemData->getSoul();
 
 		int baseValue = 0;
 		if (actor->objectType == TES3::ObjectType::Creature) {
@@ -3445,7 +3496,7 @@ namespace mwse::lua {
 	constexpr size_t PatchGetSoulValueForRechargeTitle_Setup_Size = 0x2;
 
 	int __fastcall PatchGetSoulValueForRechargeTitle(TES3::UI::InventoryTile* tile) {
-		auto actor = tile->itemData->soul;
+		auto actor = tile->itemData->getSoul();
 		if (actor->objectType == TES3::ObjectType::Creature) {
 			auto creature = static_cast<TES3::Creature*>(actor);
 			return creature->getSoulValue();
@@ -3468,16 +3519,8 @@ namespace mwse::lua {
 		auto itemData = reinterpret_cast<TES3::ItemData*>(soulGemElement->getProperty(TES3::UI::PropertyType::Pointer, TES3_UI_ID_MenuEnchantment_Item).ptrValue);
 
 		// Calculate the new soul value.
-		auto actor = itemData->soul;
-		int soulValue = 0;
-		if (itemData->soul->objectType == TES3::ObjectType::Creature) {
-			auto creature = static_cast<TES3::Creature*>(actor);
-			soulValue = creature->getSoulValue();
-		}
-		else if (itemData->soul->objectType == TES3::ObjectType::NPC) {
-			auto npc = static_cast<TES3::NPC*>(actor);
-			soulValue = npc->getSoulValue().value_or(0);
-		}
+		auto soul = itemData->getSoul();
+		int soulValue = soul ? soul->getSoulValue().value_or(0) : 0;
 
 		// Update the stored soul value on the GUI elements.
 		self->setProperty(TES3_UI_ID_MenuEnchantment_soulcharge, soulValue);
@@ -3688,6 +3731,10 @@ namespace mwse::lua {
 				gameFile->writeChunkData('TAUL', json.c_str(), json.length() + 1);
 			}
 		}
+		if (itemData->flags) {
+			// Save added flags.
+			gameFile->writeChunkData('GLFE', &itemData->flags, sizeof(TES3::ItemData::flags));
+		}
 
 		return result;
 	}
@@ -3723,6 +3770,11 @@ namespace mwse::lua {
 
 			// Clean up the buffer we made.
 			delete[] buffer;
+		}
+		else if (result == 'GLFE') {
+			auto threadID = GetCurrentThreadId();
+			auto saveLoadItemData = saveLoadItemDataMap[threadID];
+			gameFile->readChunkData(&saveLoadItemData->flags, sizeof(TES3::ItemData::flags));
 		}
 
 		// It's safe to return LUAT here, it will just pass to the next load for us.
@@ -3811,6 +3863,37 @@ namespace mwse::lua {
 	}
 
 	//
+	// Patch: Use added flags on ItemData to track bound items, instead of matching ids against bound item GMSTs.
+	//
+
+	__declspec(naked) void PatchCheckIfBoundEquipmentStack() {
+		__asm {
+			mov ecx, [esi + 4]			// ecx = equipmentStack->itemData
+			test ecx, ecx
+			jz nonbound
+			test [ecx + 0x20], 1		// if itemData->flags & ItemDataFlag_BoundItem
+			jz nonbound
+			jmp $						// Replace with bound item jump destination
+		nonbound:
+			jmp $						// Replace with non-bound item jump destination
+		}
+	}
+	const size_t PatchCheckIfBoundEquipmentStack_size = 0x17;
+
+	__declspec(naked) void PatchCheckIfBoundItemTile() {
+		__asm {
+			mov ecx, [ebp + 4]				// ecx = inventoryTile->itemData
+			test ecx, ecx
+			jz done
+			test [ecx + 0x20], 1			// if itemData->flags & ItemDataFlag_BoundItem
+			jz done
+			mov byte ptr [ebp + 0x40], 1	// inventoryTile->isBoundItem = true
+		done:
+		}
+	}
+	const size_t PatchCheckIfBoundItemTile_size = 0x11;
+
+	//
 	// Patch bound item / summon saving and loading.
 	//
 
@@ -3822,7 +3905,9 @@ namespace mwse::lua {
 		const short overrideSavingMagicEffectsFromID = TES3::EffectID::SummonCenturionSphere;
 
 		if (id >= overrideSavingMagicEffectsFromID && stack->object) {
-			if (stack->object->objectType == TES3::ObjectType::Armor || stack->object->objectType == TES3::ObjectType::Weapon) {
+			if (stack->object->objectType == TES3::ObjectType::Armor
+				|| stack->object->objectType == TES3::ObjectType::Clothing
+				|| stack->object->objectType == TES3::ObjectType::Weapon) {
 				id = TES3::EffectID::BoundDagger;
 			}
 			else if (stack->object->objectType == TES3::ObjectType::Reference) {
@@ -4612,6 +4697,135 @@ namespace mwse::lua {
 	const size_t patchConsumeItemSwallowArgs_size = 2;
 
 	//
+	// Patch: Magic reflect events.
+	//
+	
+	const auto vfxReflectPtr = reinterpret_cast<TES3::PhysicalObject**>(0x7CF110);
+
+	bool __stdcall OnMagicReflect2(TES3::MagicSourceInstance* sourceInstance, TES3::Reference* hitReference, TES3::ActiveMagicEffect* reflectEffect) {
+		float reflectChance = float(reflectEffect->unresistedMagnitude);
+
+		// Allow event overrides.
+		if (mwse::lua::event::MagicReflectEvent::getEventEnabled()) {
+			auto& luaManager = mwse::lua::LuaManager::getInstance();
+			auto stateHandle = luaManager.getThreadSafeStateHandle();
+			sol::table result = stateHandle.triggerEvent(new mwse::lua::event::MagicReflectEvent(sourceInstance, hitReference, reflectEffect, reflectChance));
+			if (result.valid()) {
+				if (result.get_or("block", false)) {
+					return false;
+				}
+				reflectChance = result["reflectChance"];
+			}
+		}
+
+		// Return true if the magic was reflected.
+		int roll = tes3::rand() % 100;
+		bool success = roll < reflectChance;
+
+		if (success) {
+			if (mwse::lua::event::MagicReflectedEvent::getEventEnabled()) {
+				auto& luaManager = mwse::lua::LuaManager::getInstance();
+				auto stateHandle = luaManager.getThreadSafeStateHandle();
+				stateHandle.triggerEvent(new mwse::lua::event::MagicReflectedEvent(sourceInstance, hitReference, reflectEffect));
+			}
+		}
+		return success;
+	}
+
+	__declspec(naked) bool OnMagicReflect() {
+		__asm {
+			lea eax, [edi + 8]		// lea eax, [edi + ActiveMagicEffectNode.data]
+			push eax				// push activeMagicEffect
+			push ebp				// push hitReference
+			push ebx				// push magicSourceInstance
+			call OnMagicReflect2
+			ret
+		}
+	}
+
+	__declspec(naked) bool patchMagicReflect() {
+		// This patch alters the last stage of the reflect magic mechanic, so that all other tests run first.
+		// It also avoids conflicting with the magic effects flag patch at 0x516F06.
+		__asm {
+			call OnMagicReflect		// Replace with call to correct address
+			test al, al
+			jz $ + 0x97				// Skip reflect if event blocked or roll fails
+
+			// Original code, relocated
+			__asm _emit 0xA1 __asm _emit 0x10  __asm _emit 0xF1 __asm _emit 0x7C __asm _emit 0x00	// mov eax, global_vfx_reflect (the assembler won't output it correctly)
+			test eax, eax
+			__asm _emit 0x74 __asm _emit 0x1B	// jz short $+0x1D (the assembler won't output short jumps)
+
+			push 0
+			push esi
+			push eax
+			push 0
+			push ebp
+			push 0
+			push 0
+			push 0
+		}
+	}
+	const size_t patchMagicReflect_size = 0x23;
+
+	//
+	// Patch: Pickpocket event.
+	//
+
+	const auto TES3_MobileActor_Pickpocket = reinterpret_cast<int (__thiscall*)(TES3::MobileActor*, int, TES3::MobilePlayer*)>(0x52AFD0);
+
+	bool __fastcall OnPickpocket2(TES3::MobileActor* mobile, DWORD _EDX_, TES3::UI::InventoryTile* tile, int count, int difficulty) {
+		auto macp = TES3::WorldController::get()->getMobilePlayer();
+
+		// The vanilla pickpocket function is patched to return the % chance instead of a boolean success.
+		int chance = TES3_MobileActor_Pickpocket(mobile, difficulty, macp);
+
+		if (mwse::lua::event::PickpocketEvent::getEventEnabled()) {
+			auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
+			sol::object response;
+			
+			if (tile) {
+				// On pickpocketing an item.
+				response = stateHandle.triggerEvent(new event::PickpocketEvent(mobile, tile->item, tile->itemData, count, chance));
+			}
+			else {
+				// On closing the window.
+				response = stateHandle.triggerEvent(new event::PickpocketEvent(mobile, nullptr, nullptr, 0, chance));
+			}
+
+			if (response.get_type() == sol::type::table) {
+				sol::table eventData = response;
+				chance = eventData["chance"];
+			}
+		}
+
+		int roll = tes3::rand() % 100;
+		bool success = roll < chance;
+		return success;
+	}
+
+	__declspec(naked) bool OnPickpocket(int difficulty, TES3::MobilePlayer* macp) {
+		__asm {
+			mov eax, [esp + 0xA4]		// mov eax, [esp + count]
+			push [esp + 0x4]			// push [difficulty]
+			push eax					// push count
+			push ebp					// push tile
+			call OnPickpocket2
+			ret 0x8
+		}
+	}
+
+	__declspec(naked) bool OnPickpocketOnExit(int difficulty, TES3::MobilePlayer* macp) {
+		__asm {
+			push [esp + 0x4]			// push [difficulty]
+			push 0						// push count
+			push 0						// push tile
+			call OnPickpocket2
+			ret 0x8
+		}
+	}
+
+	//
 	//
 	//
 
@@ -4864,7 +5078,8 @@ namespace mwse::lua {
 		// Additional load/loaded events for new game.
 		genCallEnforced(0x5FCCF4, 0x5FAEA0, reinterpret_cast<DWORD>(OnNewGame));
 		genCallEnforced(0x5FCDAA, 0x5FAEA0, reinterpret_cast<DWORD>(OnNewGame));
-		genCallEnforced(0x41A6E4, 0x563CE0, reinterpret_cast<DWORD>(OnNewGameViaStartingCell));
+		genCallEnforced(0x41A44D, 0x419A90, reinterpret_cast<DWORD>(OnNewGameViaStartingCell1));
+		genCallEnforced(0x41A6E4, 0x563CE0, reinterpret_cast<DWORD>(OnNewGameViaStartingCell2));
 
 		// Event: Start Combat
 		genCallEnforced(0x5073BC, 0x530470, reinterpret_cast<DWORD>(OnStartCombat));
@@ -5028,7 +5243,12 @@ namespace mwse::lua {
 		genCallEnforced(0x515AEF, 0x55C9D0, reinterpret_cast<DWORD>(OnMagicEffectRemoved)); // Magic Source Instance: Process
 		genCallEnforced(0x518FCC, 0x55C9D0, reinterpret_cast<DWORD>(OnMagicEffectRemoved)); // Magic Source Instance: Spell Effect Event
 
-		// Event: Absorb magic
+		// Event: Reflect magic
+		genNOPUnprotected(0x516EA0, 0x1C);
+		writePatchCodeUnprotected(0x516F17, (BYTE*)&patchMagicReflect, patchMagicReflect_size);
+		genCallUnprotected(0x516F17, reinterpret_cast<DWORD>(OnMagicReflect));
+
+		// Event: Absorbed magic
 		auto onAbsorbedMagic = &TES3::MagicSourceInstance::onAbsorbedMagic;
 		genCallEnforced(0x51783E, 0x519900, *reinterpret_cast<DWORD*>(&onAbsorbedMagic));
 		genCallEnforced(0x5178E9, 0x519900, *reinterpret_cast<DWORD*>(&onAbsorbedMagic));
@@ -5466,6 +5686,7 @@ namespace mwse::lua {
 
 		// Event: UI Refreshed.
 		genCallEnforced(0x6272F9, 0x649870, reinterpret_cast<DWORD>(OnRefreshedStatsPane)); // MenuStat_scroll_pane
+		genCallEnforced(0x5EB319, 0x5EB760, reinterpret_cast<DWORD>(OnRefreshedLocalMap)); // MenuMap_local
 
 		// Event: Inventory Filter.
 		genCallEnforced(0x5CBD5F, 0x5CC720, reinterpret_cast<DWORD>(OnFilterInventoryTile));
@@ -5707,10 +5928,10 @@ namespace mwse::lua {
 		genCallEnforced(0x5C4C36, 0x4E44E0, reinterpret_cast<DWORD>(&TES3::ItemData::dtor));
 		genCallEnforced(0x4E48A7, 0x4E5410, reinterpret_cast<DWORD>(OnDeletingItemData));
 		genPushEnforced(0x4E7761, (BYTE)sizeof(TES3::ItemData));
-		genCallEnforced(0x46589C, 0x4E7750, reinterpret_cast<DWORD>(&TES3::ItemData::createForObject));
-		genCallEnforced(0x465CFC, 0x4E7750, reinterpret_cast<DWORD>(&TES3::ItemData::createForObject));
-		genCallEnforced(0x465D92, 0x4E7750, reinterpret_cast<DWORD>(&TES3::ItemData::createForObject));
-		genCallEnforced(0x465F1A, 0x4E7750, reinterpret_cast<DWORD>(&TES3::ItemData::createForObject));
+		genCallEnforced(0x46589C, 0x4E7750, reinterpret_cast<DWORD>(&TES3::ItemData::createForBoundItem));
+		genCallEnforced(0x465CFC, 0x4E7750, reinterpret_cast<DWORD>(&TES3::ItemData::createForBoundItem));
+		genCallEnforced(0x465D92, 0x4E7750, reinterpret_cast<DWORD>(&TES3::ItemData::createForBoundItem));
+		genCallEnforced(0x465F1A, 0x4E7750, reinterpret_cast<DWORD>(&TES3::ItemData::createForBoundItem));
 		genCallEnforced(0x495402, 0x4E7750, reinterpret_cast<DWORD>(&TES3::ItemData::createForObject));
 		genCallEnforced(0x496383, 0x4E7750, reinterpret_cast<DWORD>(&TES3::ItemData::createForObject));
 		genCallEnforced(0x49803E, 0x4E7750, reinterpret_cast<DWORD>(&TES3::ItemData::createForObject));
@@ -5735,20 +5956,33 @@ namespace mwse::lua {
 		GeneratePatchForInlineItemDataDestruction(0x4E76DA);
 		GeneratePatchForInlineItemDataDestruction(0x4E78F8);
 
-		// Override item data fully repaired comparison to ensure there are no lua variables.
-		genCallEnforced(0x41089C, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x465643, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x496BF0, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x497C58, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x4E162B, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x52C400, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x52C6A2, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x5B4F07, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x5E1826, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x60E172, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x60E566, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x615789, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
-		genCallEnforced(0x633A6F, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isFullyRepaired));
+		// Override item data re-stackable tests to ensure item data with lua variables are preserved.
+		genCallEnforced(0x41089C, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x465643, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x496BF0, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x497C58, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x4E162B, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x52C400, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x52C6A2, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x5B4F07, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x5E1826, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x60E172, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x60E566, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x615789, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+		genCallEnforced(0x633A6F, 0x4E7970, reinterpret_cast<DWORD>(&TES3::ItemData::isItemDataStackable));
+
+		// Patch: Use added flags on ItemData to track bound items, instead of matching ids against bound item GMSTs.
+		writePatchCodeUnprotected(0x465460, (BYTE*)&PatchCheckIfBoundEquipmentStack, PatchCheckIfBoundEquipmentStack_size);
+		genJumpUnprotected(0x465460 + 0xD, 0x46565D);
+		genJumpUnprotected(0x465460 + 0x12, 0x46563A);
+		writePatchCodeUnprotected(0x496999, (BYTE*)&PatchCheckIfBoundEquipmentStack, PatchCheckIfBoundEquipmentStack_size);
+		genJumpUnprotected(0x496999 + 0xD, 0x496CB0);
+		genJumpUnprotected(0x496999 + 0x12, 0x496B8A);
+
+		writePatchCodeUnprotected(0x631440, (BYTE*)&PatchCheckIfBoundItemTile, PatchCheckIfBoundItemTile_size);
+		genJumpUnprotected(0x631440 + PatchCheckIfBoundItemTile_size, 0x631602);
+		writePatchCodeUnprotected(0x63174D, (BYTE*)&PatchCheckIfBoundItemTile, PatchCheckIfBoundItemTile_size);
+		genJumpUnprotected(0x63174D + PatchCheckIfBoundItemTile_size, 0x63190F);
 
 		// File loading/saving hooks for extended ItemData structure.
 		genCallEnforced(0x4998EA, 0x47E710, reinterpret_cast<DWORD>(GetFirstSavedItemStack));
@@ -5856,6 +6090,13 @@ namespace mwse::lua {
 		// Events: disarmTrap/pickLock
 		auto referenceAttemptUnlockDisarm = &TES3::Reference::attemptUnlockDisarm;
 		genCallEnforced(0x569A62, 0x4EB160, *reinterpret_cast<DWORD*>(&referenceAttemptUnlockDisarm));
+
+		// Event: Pickpocket.
+		genNOPUnprotected(0x52B1C2, 0x3); // Non-MCP, unreachable in MCP patch #77
+		genNOPUnprotected(0x52B215, 0x3);
+		genCallEnforced(0x5B56BE, 0x52AFD0, reinterpret_cast<DWORD>(OnPickpocket));
+		genCallEnforced(0x5B74B9, 0x52AFD0, reinterpret_cast<DWORD>(OnPickpocketOnExit)); // Non-MCP
+		genCallEnforced(0x745976, 0x52AFD0, reinterpret_cast<DWORD>(OnPickpocketOnExit)); // MCP patch #77
 
 		// Event: containerClosed.
 		auto actorOnCloseInventory = &TES3::Actor::onCloseInventory;

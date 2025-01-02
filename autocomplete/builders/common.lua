@@ -434,6 +434,7 @@ end
 --- @field namespace string The full namespace of the package.
 --- @field deprecated boolean Allows marking definitions as deprecated. Those definitions aren't written to the web documentation.
 --- @field examples table<string, exampleTable>|nil A table containing the examples. Keys are the example's name/path to the example file.
+--- @field libs package[]|nil For libraries with sub-namespaces such as mwse.mcm, etc., this array contians the nested namespaces.
 
 -- This corresponds to a documentation file with the [`"value"` type](https://github.com/MWSE/MWSE/blob/master/docs/type-definitions-guide.md#value-definitions).
 ---@class packageValue : package
@@ -502,7 +503,7 @@ function common.getConsistentReturnValues(package)
 		end
 		return { { name = package.returns, type = package.valuetype } }
 	end
-	
+
 	if (package.valuetype) then
 		return { { name = "result", type = package.valuetype } }
 	end
@@ -562,8 +563,8 @@ function common.compileEntry(folder, key, parent)
 			local extension = entry:match("[^.]+$")
 			if (extension == "lua") then
 				common.compileEntry(
-					lfs.join(folder, key), 
-					entry:match("[^/]+$"):sub(1, -1 * (extension:len() + 2)), 
+					lfs.join(folder, key),
+					entry:match("[^/]+$"):sub(1, -1 * (extension:len() + 2)),
 					package
 				)
 			end
@@ -596,8 +597,8 @@ function common.compile(folder, key, owningCollection, acceptedType)
 			local extension = entry:match("[^.]+$")
 			if (extension == "lua") then
 				common.compileEntry(
-					lfs.join(folder, key), 
-					entry:match("[^/]+$"):sub(1, -1 * (extension:len() + 2)), 
+					lfs.join(folder, key),
+					entry:match("[^/]+$"):sub(1, -1 * (extension:len() + 2)),
 					package
 				)
 			end
@@ -617,9 +618,9 @@ function common.compilePath(path, owningCollection, acceptedType)
 		local extension = entry:match("[^.]+$")
 		if (extension == "lua") then
 			common.compile(
-				path, 
-				entry:match("[^/]+$") :sub(1, -1 * (extension:len() + 2)), 
-				owningCollection, 
+				path,
+				entry:match("[^/]+$") :sub(1, -1 * (extension:len() + 2)),
+				owningCollection,
 				acceptedType
 			)
 		end

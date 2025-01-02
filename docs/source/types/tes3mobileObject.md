@@ -204,6 +204,10 @@ Access to the root mobile object movement flags from the previous frame, represe
 
 A vector that represents the 3D velocity of the object.
 
+!!! tip
+	To change the velocity of an actor change this property during the [calcMoveSpeed](https://mwse.github.io/MWSE/events/calcMoveSpeed/) event.
+
+
 **Returns**:
 
 * `result` ([tes3vector3](../types/tes3vector3.md))

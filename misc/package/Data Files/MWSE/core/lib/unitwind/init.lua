@@ -56,7 +56,6 @@ function UnitWind.new(data)
     unitwind.completedTests = {}
     unitwind.logger = mwseLogger.new{
         name = "UnitWind",
-        ---@diagnostic disable-next-line: undefined-global
         logLevel = "INFO",
     }
     --Validate and set defaults

@@ -52,7 +52,9 @@
 --- @field effectAttributes number[] *Read-only*. Access to a table of 24 numbers for the actor's effect attributes. In order those are: `attackBonus`, `sanctuary`, `resistMagicka`, `resistFire`, `resistFrost`, `resistShock`, `resistCommonDisease`, `resistBlightDisease`, `resistCorprus`, `resistPoison`, `resistParalysis`, `chameleon`, `resistNormalWeapons`, `waterBreathing`, `waterWalking`, `swiftSwim`, `jump`, `levitate`, `shield`, `sound`, `silence`, `blind`, `paralyze`, and `invisibility`. Each of those can be accessed individually. For example, `tes3mobileActor.chameleon`.
 --- @field encumbrance tes3statistic|tes3statisticSkill *Read-only*. Access to the actor's encumbrance statistic. When modifying this value, prefer to use `tes3.modStatistic` or `tes3.setStatistic` to also update the UI immediately.
 --- @field endurance tes3statistic|tes3statisticSkill *Read-only*. Direct access to the actor's endurance attribute statistic. If you are setting player stats, instead use `tes3.setStatistic` to also update the UI immediately.
---- @field facing number *Read-only*. The facing of the actor, in radians. It corresponds to the `mobile.reference.orientation.z`. Facing of 0 corresponds to the in game North, facing of PI corresponds to the game South. It's in clockwise direction.
+--- @field facing number *Read-only*. The facing of the actor, in radians. Facing is defined like a compass heading, positive values are clockwise and North (+Y axis) is zero, while facing of PI corresponds to South (-Y axis).
+--- 
+--- It's the same as `mobile.reference.orientation.z`.
 --- @field fatigue tes3statistic|tes3statisticSkill *Read-only*. Access to the actor's fatigue statistic. When modifying this value, prefer to use `tes3.modStatistic` or `tes3.setStatistic` to also update the UI immediately.
 --- @field fight number The actor's fight AI value.
 --- @field flee number The actor's flee AI value.
@@ -66,6 +68,7 @@
 --- @field hasFreeAction boolean *Read-only*. If true, the actor isn't knocked down or knocked out.
 --- @field hasVampirism boolean *Read-only*. True if the actor has a vampirism effect. Checks if the actor has an active vampirism magic effect. This is the same method used in the engine to determine if an NPC has a vampire head model, or can use a vampire dialogue response.
 --- @field health tes3statistic|tes3statisticSkill *Read-only*. Access to the actor's health statistic. When modifying this value, prefer to use `tes3.modStatistic` or `tes3.setStatistic` to also update the UI immediately.
+--- @field height number The height of the mobile's bounding box.
 --- @field hello number The actor's hello AI value.
 --- @field holdBreathTime number This is the time the actor can stay underwater without taking drowning damage, measured in seconds. It's starting value is `fHoldBreathTime`(GMST) seconds by default. Once the actor is underwater, this value is decreasing based on the time passed while underwater. The actor will start taking drowning damage once this time is below 0. During drowning this time will have more and more negative values based on the duration of the drowning. Changing this allows manipulating for how long the actor can stay underwater without drowning. Note that player's Breath HUD element won't show values larger than `fHoldBreathTime`.
 --- @field hostileActors tes3mobileCreature[]|tes3mobileNPC[]|tes3mobilePlayer[] *Read-only*. A collection of other `tes3mobileActor`s that this actor considers hostile.
@@ -94,6 +97,7 @@
 --- @field isRunning boolean Direct access to the actor's current movement flags, showing if the actor is running.
 --- @field isSliding boolean Direct access to the actor's current movement flags, showing if the actor is sliding off a steep surface.
 --- @field isSneaking boolean Direct access to the actor's current movement flags, showing if the actor is sneaking.
+--- @field isSpeaking boolean *Read-only*. This property is `true` when the actor is speaking a dialogue line. This includes: hit grunts, combat reactions, and the usual dialogue.
 --- @field isSwimming boolean Direct access to the actor's current movement flags, showing if the actor is swimming.
 --- @field isTurningLeft boolean Direct access to the actor's current movement flags, showing if the actor is turning left.
 --- @field isTurningRight boolean Direct access to the actor's current movement flags, showing if the actor is turning right.

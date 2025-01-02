@@ -10,3 +10,4 @@
 --- @field fatigueDamage number *Read-only*. The amount of fatigue damage done.
 --- @field mobile tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer *Read-only*. The mobile actor that took fatigue damage.
 --- @field reference tes3reference *Read-only*. The mobile’s associated reference.
+--- @field source tes3.damageSource *Read-only*. The origin of the damage. May be `tes3.damageSource.attack` or `tes3.damageSource.script`.

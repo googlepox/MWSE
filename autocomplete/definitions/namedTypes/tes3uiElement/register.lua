@@ -60,6 +60,9 @@ Widget-specific events:
 		Triggers after the text has been cleared by the user in text input widgets that have `placeholderText` set.
 	* **textUpdated**
 		Triggers after the text of the text input has changed.
+* Color Picker:
+	* **colorChanged**
+		Triggers after new color was chosen in the color picker.
 ***
 
 #### Event forwarding

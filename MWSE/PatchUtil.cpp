@@ -17,8 +17,10 @@
 #include "TES3GameFile.h"
 #include "TES3GameSetting.h"
 #include "TES3InputController.h"
+#include "TES3ItemData.h"
 #include "TES3Light.h"
 #include "TES3LoadScreenManager.h"
+#include "TES3MagicEffectInstance.h"
 #include "TES3Misc.h"
 #include "TES3MobilePlayer.h"
 #include "TES3MobManager.h"
@@ -36,7 +38,8 @@
 #include "NILinesData.h"
 #include "NIPick.h"
 #include "NISortAdjustNode.h"
-#include "NiTriBasedGeometry.h"
+#include "NiTriShape.h"
+#include "NiTriShapeData.h"
 #include "NIUVController.h"
 
 #include "BitUtil.h"
@@ -1028,7 +1031,196 @@ namespace mwse::patch {
 			pathGrid->show();
 		}
 	}
-	
+
+	//
+	// Patch: Allow bound armour function to also summon bracers and pauldrons.
+	//
+
+	const auto TES3_SwapBoundArmor = reinterpret_cast<bool (__cdecl*)(TES3::MagicEffectInstance*, const char*, const char*)>(0x465DE0);
+	const auto TES3_UI_PostAddAndEquipBoundItem = reinterpret_cast<void(__cdecl*)(TES3::Item*, TES3::ItemData*, int)>(0x5D1F00);
+
+	TES3::EquipmentStack* createEquipBoundItem(TES3::Item* item, TES3::Actor* actor, TES3::MobileActor* mobile) {
+		// Create and equip bound item. Excerpted from bound gauntlet code.
+		TES3::EquipmentStack* equipped = nullptr;
+		auto itemData = TES3::ItemData::createForBoundItem(item);
+
+		actor->inventory.addItem(mobile, item, 1, false, &itemData);
+		actor->equipItem(item, itemData, &equipped, mobile);
+		if (mobile->actorType == TES3::MobileActorType::Player) {
+			TES3_UI_PostAddAndEquipBoundItem(item, itemData, 1);
+		}
+		mobile->wearItem(item, itemData, false, false, true);
+		return equipped->canonicalCopy();
+	}
+
+	bool __cdecl PatchSwapBoundArmor(TES3::MagicEffectInstance* effectInstance, const char* armorId1, const char* armorId2) {
+		auto records = TES3::DataHandler::get()->nonDynamicData;
+
+		auto armor1 = static_cast<TES3::Armor*>(records->resolveObject(armorId1));
+		auto armor2 = armorId2 ? static_cast<TES3::Armor*>(records->resolveObject(armorId2)) : nullptr;
+
+		if (armor1 == nullptr || armor1->objectType != TES3::ObjectType::Armor) {
+			return false;
+		}
+
+		if (armor1->slot == TES3::ArmorSlot::LeftBracer) {
+			auto mobile = effectInstance->target->getAttachedMobileActor();
+			auto actor = static_cast<TES3::Actor*>(effectInstance->target->baseObject);
+			auto mcpGlovesWithBracers = mcp::getFeatureEnabled(mcp::feature::AllowGlovesWithBracers);
+
+			// Left hand.
+			// Un-equip and memorize any item in the same location.
+			auto equipLeftHand = actor->getEquippedArmorBySlot(TES3::ArmorSlot::LeftGauntlet);
+			if (!equipLeftHand) {
+				equipLeftHand = actor->getEquippedArmorBySlot(TES3::ArmorSlot::LeftBracer);
+			}
+			if (!equipLeftHand && !mcpGlovesWithBracers) {
+				equipLeftHand = actor->getEquippedClothingBySlot(TES3::ClothingSlot::LeftGlove);
+			}
+
+			if (equipLeftHand) {
+				// The original left hand item is memorized in the lastUsedArmor member.
+				effectInstance->lastUsedArmor = equipLeftHand->canonicalCopy();
+				if (equipLeftHand->object == mobile->currentEnchantedItem.object) {
+					effectInstance->lastUsedEnchItem = mobile->currentEnchantedItem.canonicalCopy();
+				}
+			}
+
+			// Create bound item and record created stack.
+			effectInstance->createdData.equipmentOrSummon = createEquipBoundItem(armor1, actor, mobile);
+
+			// Right hand.
+			if (armor2) {
+				// Un-equip and memorize any item in the same location.
+				auto equipRightHand = actor->getEquippedArmorBySlot(TES3::ArmorSlot::RightGauntlet);
+				if (!equipRightHand) {
+					equipRightHand = actor->getEquippedArmorBySlot(TES3::ArmorSlot::RightBracer);
+				}
+				if (!equipRightHand && !mcpGlovesWithBracers) {
+					equipRightHand = actor->getEquippedClothingBySlot(TES3::ClothingSlot::RightGlove);
+				}
+
+				if (equipRightHand) {
+					// The original right hand item is memorized in the lastUsedWeapon member.
+					effectInstance->lastUsedWeapon = equipRightHand->canonicalCopy();
+					if (equipRightHand->object == mobile->currentEnchantedItem.object) {
+						effectInstance->lastUsedEnchItem = mobile->currentEnchantedItem.canonicalCopy();
+					}
+				}
+
+				// Create bound item and record created stack.
+				effectInstance->createdData2 = createEquipBoundItem(armor2, actor, mobile);
+			}
+
+			return true;
+		}
+		else if (armor1->slot == TES3::ArmorSlot::LeftPauldron) {
+			auto mobile = effectInstance->target->getAttachedMobileActor();
+			auto actor = static_cast<TES3::Actor*>(effectInstance->target->baseObject);
+
+			// Left shoulder.
+			// Un-equip and memorize any item in the same location.
+			auto equipLeftPauldron = actor->getEquippedArmorBySlot(TES3::ArmorSlot::LeftPauldron);
+			if (equipLeftPauldron) {
+				// The original left side item is memorized in the lastUsedArmor member.
+				effectInstance->lastUsedArmor = equipLeftPauldron->canonicalCopy();
+				if (equipLeftPauldron->object == mobile->currentEnchantedItem.object) {
+					effectInstance->lastUsedEnchItem = mobile->currentEnchantedItem.canonicalCopy();
+				}
+			}
+
+			// Create bound item and record created stack.
+			effectInstance->createdData.equipmentOrSummon = createEquipBoundItem(armor1, actor, mobile);
+
+			// Right shoulder.
+			if (armor2) {
+				// Un-equip and memorize any item in the same location.
+				auto equipRightPauldron = actor->getEquippedArmorBySlot(TES3::ArmorSlot::RightPauldron);
+				if (equipRightPauldron) {
+					// The original right side item is memorized in the lastUsedWeapon member.
+					effectInstance->lastUsedWeapon = equipRightPauldron->canonicalCopy();
+					if (equipRightPauldron->object == mobile->currentEnchantedItem.object) {
+						effectInstance->lastUsedEnchItem = mobile->currentEnchantedItem.canonicalCopy();
+					}
+				}
+
+				// Create bound item and record created stack.
+				effectInstance->createdData2 = createEquipBoundItem(armor2, actor, mobile);
+			}
+
+			return true;
+		}
+		else {
+			// Use original code for all other slots.
+			return TES3_SwapBoundArmor(effectInstance, armorId1, armorId2);
+		}
+	}
+
+	//
+	// Patch: Modify proximity movement speed matching of AI followers to limit the speed match from going to zero on immobilized follow targets.
+	//
+
+	float __stdcall PatchGetAnimDataMovementSpeedCapped(TES3::AnimationData* animData) {
+		// Restrict speed matching to be at least 60% of base animation speed.
+		return std::max(0.6f, animData->movementSpeed);
+	}
+
+	__declspec(naked) void PatchMovementAnimSpeedMatching() {
+		__asm {
+			push eax
+			call $					// Replace with call PatchGetAnimDataMovementSpeedCapped
+			fstp [esp + 0x14]		// fst [targetMoveSpeed]
+			fld [esp + 0x10]		// fld [finalMovementSpeed]
+		}
+	}
+	const size_t PatchMovementAnimSpeedMatching_size = 0xE;
+
+	//
+	// Patch: Allow per-shape control of whether software or hardware skinning is used.
+	//
+
+	// Define a constant usable in inline asm.
+	#define Const_SoftwareSkinningFlag 0x200
+	static_assert(Const_SoftwareSkinningFlag == NI::TriShapeFlags::SoftwareSkinningFlag);
+
+	__declspec(naked) void PatchNITriBasedGeom_Ctor1() {
+		__asm {
+			movzx eax, word ptr [esp + 0x1C]	// eax = zero extended triangleCount
+			mov dword ptr [esi], 0x751268		// Set NiTriBasedGeom vtable
+			mov [esi + 0x34], eax				// Initialize triangleCount and patchRenderFlags together
+			nop
+		}
+	}
+	const size_t PatchNITriBasedGeom_Ctor1_size = 0xF;
+
+	__declspec(naked) void PatchNITriBasedGeom_Ctor2() {
+		__asm {
+			xor edx, edx
+			mov [esi + 0x34], edx				// Initialize triangleCount and patchRenderFlags together
+			nop
+		}
+	}
+	const size_t PatchNITriBasedGeom_Ctor2_size = 0x6;
+
+	const auto NI_TriBasedGeometry_CopyMembers = reinterpret_cast<void(__thiscall*)(NI::TriBasedGeometry*, NI::TriBasedGeometry*)>(0x6F15B0);
+	void __fastcall PatchNITriShapeCopyMembers(NI::TriShape* _this, DWORD _EDX_, NI::TriShape* to) {
+		NI_TriBasedGeometry_CopyMembers(_this, to);
+
+		// Ensure that if the geometry data has been deep cloned, that the render flags are copied too.
+		if (to->modelData != _this->modelData) {
+			to->getModelData()->patchRenderFlags = _this->getModelData()->patchRenderFlags;
+		}
+	}
+
+	__declspec(naked) void PatchNIDX8Renderer_RenderShape() {
+		__asm {
+			nop
+			test word ptr [esi + 0x36], Const_SoftwareSkinningFlag	// Skip hardware skinning if patchRenderFlags matches SoftwareSkinningFlag
+			__asm _emit 0x75 __asm _emit 0x19						// jnz short $ + 0x1B (assembler can't output short offsets correctly)
+		}
+	}
+	const size_t PatchNIDX8Renderer_RenderShape_size = 0x8;
+
 	//
 	// Install all the patches.
 	//
@@ -1300,7 +1492,8 @@ namespace mwse::patch {
 		// Patch: Set ActiveMagicEffect.isIllegalSummon correctly on loading a savegame.
 		writePatchCodeUnprotected(0x454826, (BYTE*)&PatchLoadActiveMagicEffect, PatchLoadActiveMagicEffect_size);
 
-		// Patch: Fix crash in NPC flee logic when trying to pick a random node from a pathgrid with 0 nodes.
+		// Patch: Fix crash in NPC wander and flee logic when trying to pick a random node from a pathgrid with 0 nodes.
+		genCallEnforced(0x5339D8, 0x4E2850, reinterpret_cast<DWORD>(PatchCellGetPathGridWithNodes));
 		genCallEnforced(0x549E76, 0x4E2850, reinterpret_cast<DWORD>(PatchCellGetPathGridWithNodes));
 
 		// Patch: UI element image mirroring on negative image scale.
@@ -1463,6 +1656,21 @@ namespace mwse::patch {
 		// Patch: Resolve node count mismatch when loading pathgrid records with missing subrecords.
 		writePatchCodeUnprotected(0x4F444E, (BYTE*)&PatchPathGridLoader, PatchPathGridLoader_size);
 		genCallUnprotected(0x4F444E + 4, reinterpret_cast<DWORD>(PatchPathGridLoaderCheckNodeData));
+
+		// Patch: Allow bound armour function to also summon bracers and pauldrons.
+		genCallEnforced(0x466457, 0x465DE0, reinterpret_cast<DWORD>(PatchSwapBoundArmor));
+
+		// Patch: Modify proximity movement speed matching of AI followers to limit the speed match from going to zero on immobilized follow targets.
+		writePatchCodeUnprotected(0x540DBA, (BYTE*)&PatchMovementAnimSpeedMatching, PatchMovementAnimSpeedMatching_size);
+		genCallUnprotected(0x540DBA + 1, reinterpret_cast<DWORD>(PatchGetAnimDataMovementSpeedCapped));
+
+		// Patch: Allow control of whether software or hardware skinning is used through TriShape flags.
+		auto TriShape_linkObject = &NI::TriShape::linkObject;
+		writePatchCodeUnprotected(0x6FF0A8, (BYTE*)&PatchNITriBasedGeom_Ctor1, PatchNITriBasedGeom_Ctor1_size);
+		writePatchCodeUnprotected(0x6FF0F0, (BYTE*)&PatchNITriBasedGeom_Ctor2, PatchNITriBasedGeom_Ctor2_size);
+		genCallEnforced(0x6E54C5, 0x6F15B0, reinterpret_cast<DWORD>(PatchNITriShapeCopyMembers));
+		writePatchCodeUnprotected(0x6ACF1F, (BYTE*)&PatchNIDX8Renderer_RenderShape, PatchNIDX8Renderer_RenderShape_size);
+		overrideVirtualTableEnforced(0x7508B0, offsetof(NI::TriShape_vTable, NI::TriShape_vTable::linkObject), 0x6E56D0, *reinterpret_cast<DWORD*>(&TriShape_linkObject));
 	}
 
 	void installPostLuaPatches() {

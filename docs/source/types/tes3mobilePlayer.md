@@ -646,7 +646,9 @@ This is the time measured in hours from the beginning of the game when the actor
 ### `facing`
 <div class="search_terms" style="display: none">facing</div>
 
-*Read-only*. The facing of the actor, in radians. It corresponds to the `mobile.reference.orientation.z`. Facing of 0 corresponds to the in game North, facing of PI corresponds to the game South. It's in clockwise direction.
+*Read-only*. The facing of the actor, in radians. Facing is defined like a compass heading, positive values are clockwise and North (+Y axis) is zero, while facing of PI corresponds to South (-Y axis).
+
+It's the same as `mobile.reference.orientation.z`.
 
 **Returns**:
 
@@ -910,7 +912,7 @@ No description yet available.
 ### `height`
 <div class="search_terms" style="display: none">height</div>
 
-The height of the mobile above the ground.
+The height of the mobile's bounding box.
 
 **Returns**:
 
@@ -1311,6 +1313,17 @@ Direct access to the actor's current movement flags, showing if the actor is sli
 <div class="search_terms" style="display: none">issneaking, sneaking</div>
 
 Direct access to the actor's current movement flags, showing if the actor is sneaking.
+
+**Returns**:
+
+* `result` (boolean)
+
+***
+
+### `isSpeaking`
+<div class="search_terms" style="display: none">isspeaking, speaking</div>
+
+*Read-only*. This property is `true` when the actor is speaking a dialogue line. This includes: hit grunts, combat reactions, and the usual dialogue.
 
 **Returns**:
 
@@ -2276,6 +2289,10 @@ Toggle flag for if the player's vanity camera is disabled.
 <div class="search_terms" style="display: none">velocity</div>
 
 A vector that represents the 3D velocity of the object.
+
+!!! tip
+	To change the velocity of an actor change this property during the [calcMoveSpeed](https://mwse.github.io/MWSE/events/calcMoveSpeed/) event.
+
 
 **Returns**:
 

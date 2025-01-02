@@ -32,6 +32,28 @@ A value which controls how far the game AI is processed. Corresponds to AI Dista
 
 ***
 
+### `allMobileActors`
+<div class="search_terms" style="display: none">allmobileactors</div>
+
+*Read-only*. A copy of the list of mobiles with currently running AI. This does not include the player. The available objects are only valid at a point in time, and maybe be deleted or re-used any time a mobile is moved or disabled, so this data should only be used in the same moment that it is read. This is not a lightweight accessor, so it should be used carefully.
+
+**Returns**:
+
+* `result` ([tes3mobileActor](../types/tes3mobileActor.md)[])
+
+***
+
+### `allPlanners`
+<div class="search_terms" style="display: none">allplanners</div>
+
+*Read-only*. A copy of the list of currently running AI planners. This does not include the player. The available objects are only valid at a point in time, and maybe be deleted or re-used any time a mobile is moved or disabled, so this data should only be used in the same moment that it is read. This is not a lightweight accessor, so it should be used carefully.
+
+**Returns**:
+
+* `result` ([tes3aiPlanner](../types/tes3aiPlanner.md)[])
+
+***
+
 ## Methods
 
 ### `checkAlarmRadius`

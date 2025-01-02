@@ -6,6 +6,8 @@
 --- @class tes3processManager
 --- @field aiDistance number A value which controls how far the game AI is processed, measured in game distance units. Corresponds to AI Distance slider in Options menu.
 --- @field aiDistanceScale number A value which controls how far the game AI is processed. Corresponds to AI Distance slider in Options menu. This scale is in range [0, 1]. Where `0` means the minimal AI processing range, while `1` means maximal AI processing range.
+--- @field allMobileActors tes3mobileCreature[]|tes3mobileNPC[]|tes3mobilePlayer[] *Read-only*. A copy of the list of mobiles with currently running AI. This does not include the player. The available objects are only valid at a point in time, and maybe be deleted or re-used any time a mobile is moved or disabled, so this data should only be used in the same moment that it is read. This is not a lightweight accessor, so it should be used carefully.
+--- @field allPlanners tes3aiPlanner[] *Read-only*. A copy of the list of currently running AI planners. This does not include the player. The available objects are only valid at a point in time, and maybe be deleted or re-used any time a mobile is moved or disabled, so this data should only be used in the same moment that it is read. This is not a lightweight accessor, so it should be used carefully.
 tes3processManager = {}
 
 --- 

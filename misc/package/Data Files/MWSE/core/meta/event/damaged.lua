@@ -19,4 +19,4 @@
 --- @field mobile tes3mobileCreature|tes3mobileNPC|tes3mobilePlayer *Read-only*. The mobile actor that took damage.
 --- @field projectile tes3mobileProjectile|tes3mobileSpellProjectile *Read-only*. Projectile that dealt the damage. Can be `nil`.
 --- @field reference tes3reference *Read-only*. The mobile’s associated reference.
---- @field source tes3.damageSource *Read-only*. The origin of damage. These damage sources are present as [`tes3.damageSource`](https://mwse.github.io/MWSE/references/damage-sources/) constants. See the example. Damage with `tes3.damageSource.shield` source comes from magic shields. Other sources are self-explanatory.
+--- @field source tes3.damageSource *Read-only*. The origin of the damage. These damage sources are present as [`tes3.damageSource`](https://mwse.github.io/MWSE/references/damage-sources/) constants. See the example. Damage with `tes3.damageSource.shield` source comes from magic shields. Other sources are self-explanatory.
