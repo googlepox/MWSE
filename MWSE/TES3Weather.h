@@ -60,8 +60,16 @@ namespace TES3 {
 		char soundIDAmbientLoop[260]; // 0x20E
 		Sound * soundAmbientLoop; // 0x314
 
-		Weather() = delete;
-		~Weather() = delete;
+		Weather();
+		Weather(WeatherController* wc);
+		~Weather();
+
+		void simulate(float transitionScalar, float deltaTime);
+		void unload();
+		void transition();
+
+		void vtbl_transition();
+		void vtbl_unload();
 
 		//
 		// Custom functions.
@@ -75,6 +83,8 @@ namespace TES3 {
 		bool setCloudTexturePath(const char* path);
 		const char* getAmbientLoopSoundID() const;
 		bool setAmbientLoopSoundID(const char* id);
+
+		bool supportsParticleLerp() const;
 
 		// Storage for cached userdata.
 		sol::object getOrCreateLuaObject(lua_State* L) const;

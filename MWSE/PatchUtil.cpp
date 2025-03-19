@@ -35,6 +35,7 @@
 #include "TES3UIMenuController.h"
 #include "TES3VFXManager.h"
 #include "TES3Weapon.h"
+#include "TES3WeatherController.h"
 #include "TES3WorldController.h"
 
 #include "NICollisionSwitch.h"
@@ -2015,6 +2016,9 @@ namespace mwse::patch {
 		genCallEnforced(0x4D2D9F, 0x4D2F40, reinterpret_cast<DWORD>(PatchDynamicLightingTest));
 		genCallEnforced(0x4D2F10, 0x4D2F40, reinterpret_cast<DWORD>(PatchDynamicLightingTest));
 		genCallEnforced(0x4D3350, 0x4D2F40, reinterpret_cast<DWORD>(PatchDynamicLightingTest));
+
+		// Pach: Extend weather system.
+		TES3::WeatherController::installPatches();
 	}
 
 	void installPostLuaPatches() {

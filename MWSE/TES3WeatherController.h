@@ -9,9 +9,15 @@
 #include "NINode.h"
 
 namespace TES3 {
+#define MWSE_CUSTOM_WEATHERS FALSE
 	constexpr int WEATHER_ID_INVALID = -1;
 	constexpr int VANILLA_MAX_WEATHER_COUNT = 10;
+
+#if defined(MWSE_CUSTOM_WEATHERS) && MWSE_CUSTOM_WEATHERS == TRUE
+	constexpr int MAX_WEATHER_COUNT = 255;
+#else
 	constexpr int MAX_WEATHER_COUNT = VANILLA_MAX_WEATHER_COUNT;
+#endif
 
 	namespace WeatherType {
 		enum WeatherType {
@@ -25,6 +31,9 @@ namespace TES3 {
 			Blight,
 			Snow,
 			Blizzard,
+
+			FirstVanilla = Clear,
+			LastVanilla = Blizzard,
 
 			MINIMUM = 0,
 			MAXIMUM = MAX_WEATHER_COUNT - 1
@@ -50,12 +59,16 @@ namespace TES3 {
 			NI::Pointer<NI::AVObject> object; // 0x30
 			int unknown_0x34;
 		};
-		NI::Node* sgSunVis; // 0x0
-		NI::Node* sgSunBase; // 0x4
-		NI::Node* sgSunGlare; // 0x8
+		NI::Pointer<NI::Node> sgSunVis; // 0x0
+		NI::Pointer<NI::Node> sgSunBase; // 0x4
+		NI::Pointer<NI::Node> sgSunGlare; // 0x8
 		int daysRemaining; // 0xC
 		bool unknown_0x10;
+#if defined(MWSE_CUSTOM_WEATHERS) && MWSE_CUSTOM_WEATHERS == TRUE
+		Weather* vanillaWeathers[VANILLA_MAX_WEATHER_COUNT]; // 0x14
+#else
 		Weather* arrayWeathers[MAX_WEATHER_COUNT]; // 0x14
+#endif
 		Weather* currentWeather; // 0x3C
 		Weather* nextWeather; // 0x40
 		Moon* moonSecunda; // 0x44
@@ -144,6 +157,9 @@ namespace TES3 {
 		Vector3 skyDomePosition; // 0x1DC
 		int sunGlareRayTestLoadBalancer; // 0x1E8
 		bool isSunOccluded; // 0x1EC
+#if defined(MWSE_CUSTOM_WEATHERS) && MWSE_CUSTOM_WEATHERS == TRUE
+		Weather* arrayWeathers[MAX_WEATHER_COUNT];
+#endif
 
 		WeatherController() = delete;
 		~WeatherController() = delete;
@@ -152,12 +168,29 @@ namespace TES3 {
 		// Other related this-call functions.
 		//
 
+		WeatherController* ctor(int initialWeatherId);
+		void dtor();
+
 		int getCurrentWeatherIndex() const;
 		float calcSunDamageScalar();
 		void switchWeather(int weatherId, float startingTransition);
 
 		void enableSky();
 		void disableSky();
+
+		//
+		// Custom weather function rewrites
+		//
+
+		void transition(int weatherId);
+		void onInactivateWeather(DataHandler* dataHandler, float gameHour);
+		float lerpE0() const;
+		Vector3* lerpE4(Vector3* out_result) const;
+
+		void setCurrentWeather(int weatherId);
+		void clearCurrentWeather();
+		void setNextWeather(int weatherId);
+		void clearNextWeather();
 		
 		//
 		// Helper functions.
@@ -180,8 +213,10 @@ namespace TES3 {
 
 		void switchImmediate(int weather);
 		void switchTransition(int weather);
+
+		static void installPatches();
 	};
-	static_assert(sizeof(WeatherController) == 0x1F0, "TES3::WeatherController failed size validation");
+	//static_assert(sizeof(WeatherController) == 0x1F0, "TES3::WeatherController failed size validation");
 	static_assert(offsetof(WeatherController, currentWeather) == 0x3C, "TES3::WeatherController::currentWeather failed offset validation");
 	static_assert(offsetof(WeatherController, isSunOccluded) == 0x1EC, "TES3::WeatherController::isSunOccluded failed offset validation");
 	static_assert(sizeof(WeatherController::Particle) == 0x38, "TES3::WeatherController::Particle failed size validation");

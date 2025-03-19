@@ -11,6 +11,7 @@
 #include "TES3WeatherClear.h"
 #include "TES3WeatherCloudy.h"
 #include "TES3WeatherController.h"
+#include "TES3WeatherCustom.h"
 #include "TES3WeatherFoggy.h"
 #include "TES3WeatherOvercast.h"
 #include "TES3WeatherRain.h"
@@ -99,6 +100,22 @@ namespace mwse::lua {
 			// Define inheritance structures. These must be defined in order from top to bottom. The complete chain must be defined.
 			usertypeDefinition[sol::base_classes] = sol::bases<TES3::Weather>();
 			setUserdataForTES3Weather(usertypeDefinition);
+		}
+
+		// Binding for TES3::WeatherCustom
+		{
+			// Start our usertype.
+			auto usertypeDefinition = state.new_usertype<TES3::WeatherCustom>("tes3weatherCustom");
+			usertypeDefinition["new"] = sol::no_constructor;
+
+			// Define inheritance structures. These must be defined in order from top to bottom. The complete chain must be defined.
+			usertypeDefinition[sol::base_classes] = sol::bases<TES3::Weather>();
+			setUserdataForTES3Weather(usertypeDefinition);
+
+			// Basic property binding.
+			usertypeDefinition["data"] = &TES3::WeatherCustom::data;
+			usertypeDefinition["name"] = &TES3::WeatherCustom::name;
+			usertypeDefinition["overrideId"] = &TES3::WeatherCustom::overrideId;
 		}
 
 		// Binding for TES3::WeatherFoggy

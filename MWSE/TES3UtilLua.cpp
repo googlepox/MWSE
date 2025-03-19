@@ -76,6 +76,7 @@
 #include "TES3UIMenuController.h"
 #include "TES3VFXManager.h"
 #include "TES3Weather.h"
+#include "TES3WeatherCustom.h"
 #include "TES3WeatherController.h"
 #include "TES3WorldController.h"
 
@@ -6224,6 +6225,45 @@ namespace mwse::lua {
 		return macp->dialogueList->size() > topicCountBefore;
 	}
 
+	TES3::Weather* addWeather(sol::table params) {
+		auto weatherController = TES3::WorldController::get()->weatherController;
+
+		int id = getOptionalParam<int>(params, "id", -1);;
+		if (id < TES3::WeatherType::MINIMUM || id > TES3::WeatherType::MAXIMUM) {
+			throw std::invalid_argument("Invalid 'id' parameter provided. It must be an integer greater than 10 and less than 254.");
+		}
+		else if (weatherController->arrayWeathers[id]) {
+			throw std::invalid_argument("Invalid 'id' parameter provided. A weather with this id already exists.");
+		}
+
+		const auto name = getOptionalParam<std::string>(params, "name");
+		if (!name || name.value().empty()) {
+			throw std::invalid_argument("Invalid 'name' parameter provided. A weather must be given a name.");
+		}
+
+		const auto weather = new TES3::WeatherCustom(weatherController);
+		weather->index = id;
+		weather->name = name.value();
+		weather->overrideId = getOptionalParam<int>(params, "overrideId");
+
+		// Get the custom functions.
+		sol::optional<sol::protected_function> simulate = params["simulate"];
+		if (simulate) {
+			weather->simulateFunction = simulate.value();
+		}
+		sol::optional<sol::protected_function> transition = params["transition"];
+		if (transition) {
+			weather->transitionFunction = transition.value();
+		}
+		sol::optional<sol::protected_function> unload = params["unload"];
+		if (unload) {
+			weather->unloadFunction = unload.value();
+		}
+
+		weatherController->arrayWeathers[id] = weather;
+		return weather;
+	}
+
 	bool showDialogueMenu(sol::optional<sol::table> params) {
 		const auto worldController = TES3::WorldController::get();
 		if (!worldController) {
@@ -6381,6 +6421,7 @@ namespace mwse::lua {
 		tes3["addSoulGem"] = addSoulGem;
 		tes3["addSpell"] = addSpell;
 		tes3["addTopic"] = addTopic;
+		tes3["addWeather"] = addWeather;
 		tes3["adjustSoundVolume"] = adjustSoundVolume;
 		tes3["advanceTime"] = advanceTime;
 		tes3["applyConstantEffectEquipment"] = applyConstantEffectEquipment;

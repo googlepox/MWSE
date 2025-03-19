@@ -8,6 +8,7 @@
 #include "TES3WeatherBlizzard.h"
 #include "TES3WeatherClear.h"
 #include "TES3WeatherCloudy.h"
+#include "TES3WeatherCustom.h"
 #include "TES3WeatherFoggy.h"
 #include "TES3WeatherOvercast.h"
 #include "TES3WeatherRain.h"
@@ -19,6 +20,77 @@
 #include "LuaObjectInvalidatedEvent.h"
 
 namespace TES3 {
+	//
+	// Weather
+	//
+
+	Weather::Weather() {
+		vTable = (Weather_vTable*)0x746BD4;
+		index = WEATHER_ID_INVALID;
+		transitionDelta = 0.1f;
+		glareView = 1.0f;
+		controller = nullptr;
+		ambientSunriseCol = { 0.0f, 0.0f, 0.0f };
+		ambientDayCol = { 0.0f, 0.0f, 0.0f };
+		ambientSunsetCol = { 0.0f, 0.0f, 0.0f };
+		ambientNightCol = { 0.0f, 0.0f, 0.0f };
+		fogSunriseCol = { 0.0f, 0.0f, 0.0f };
+		fogDayCol = { 0.0f, 0.0f, 0.0f };
+		fogSunsetCol = { 0.0f, 0.0f, 0.0f };
+		fogNightCol = { 0.0f, 0.0f, 0.0f };
+		skySunriseCol = { 0.0f, 0.0f, 0.0f };
+		skyDayCol = { 0.0f, 0.0f, 0.0f };
+		skySunsetCol = { 0.0f, 0.0f, 0.0f };
+		skyNightCol = { 0.0f, 0.0f, 0.0f };
+		sunSunriseCol = { 0.0f, 0.0f, 0.0f };
+		sunDayCol = { 0.0f, 0.0f, 0.0f };
+		sunSunsetCol = { 0.0f, 0.0f, 0.0f };
+		sunNightCol = { 0.0f, 0.0f, 0.0f };
+		sundiscSunsetCol = { 0.0f, 0.0f, 0.0f };
+		cloudsMaxPercent = 1.0f;
+		landFogDayDepth = 1.0f;
+		landFogNightDepth = 1.0f;
+		cloudsSpeed = 0.0f;
+		windSpeed = 0.0f;
+		ZeroMemory(texturePathCloud, sizeof(texturePathCloud));
+		ambientPlaying = false;
+		underwaterSoundState = false;
+		ZeroMemory(soundIDAmbientLoop, sizeof(soundIDAmbientLoop));
+		soundAmbientLoop = nullptr;
+
+		unknown_0x208 = 0;
+		unknown_0xE0 = 0;
+		unknown_0xE4 = { 0, 0, 0 };
+	}
+
+	Weather::Weather(WeatherController* wc) : Weather() {
+		controller = wc;
+	}
+
+	Weather::~Weather() {
+
+	}
+
+	void Weather::simulate(float transitionScalar, float deltaTime) {
+		vTable->simulate(this, transitionScalar, deltaTime);
+	}
+
+	void Weather::unload() {
+		vTable->unload(this);
+	}
+
+	void Weather::transition() {
+		vTable->transition(this);
+	}
+
+	void Weather::vtbl_transition() {
+
+	}
+
+	void Weather::vtbl_unload() {
+
+	}
+
 	std::string Weather::toJson() const {
 		std::ostringstream ss;
 		ss << "\"tes3weather:" << index << "\"";
@@ -39,7 +111,7 @@ namespace TES3 {
 		case WeatherType::Thunder: return "Thunderstorm";
 		}
 
-		throw std::runtime_error("Invalid weather index. No name could be determined.");
+		return static_cast<const WeatherCustom*>(this)->name.c_str();
 	}
 
 	const char* Weather::getCloudTexturePath() const {
@@ -73,6 +145,12 @@ namespace TES3 {
 			soundAmbientLoop = nullptr;
 		}
 		return true;
+	}
+
+	bool Weather::supportsParticleLerp() const {
+		return index == WeatherType::Rain
+			|| index == WeatherType::Thunder
+			|| index == WeatherType::Snow;
 	}
 
 	static std::unordered_map<const Weather*, sol::object> weatherObjectCache;
@@ -128,7 +206,7 @@ namespace TES3 {
 			ref = sol::make_object(L, static_cast<const TES3::WeatherThunder*>(this));
 			break;
 		default:
-			ref = sol::make_object_userdata(L, this);
+			ref = sol::make_object(L, static_cast<const TES3::WeatherCustom*>(this));
 		}
 
 		if (ref != sol::nil) {
