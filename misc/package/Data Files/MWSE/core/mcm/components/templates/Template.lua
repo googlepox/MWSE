@@ -185,12 +185,12 @@ function Template:clickTab(thisPage)
 		-- Disable tabs and tally width
 		local totalWidth = 0
 		for _id, page in pairs(self.pages) do
-			local tab = tabsBlock:findChild(page.tabUID)
+			local tab = tabsBlock:findChild(page.tabUID) --[[@as tes3uiElement]]
 			tab.widget.state =  tes3.uiState.normal
 			totalWidth = totalWidth + tab.width
 		end
 		-- Enable tab for this page
-		local tab = tabsBlock:findChild(thisPage.tabUID)
+		local tab = tabsBlock:findChild(thisPage.tabUID) --[[@as tes3uiElement]]
 		tab.widget.state = tes3.uiState.active
 
 		-- Ensure tabs are visible.
@@ -248,7 +248,7 @@ end
 function Template:padTabBlock()
 	local totalWidth = 0
 	for _, page in pairs(self.pages) do
-		local tab = self.elements.tabsBlock:findChild(page.tabUID)
+		local tab = self.elements.tabsBlock:findChild(page.tabUID) --[[@as tes3uiElement]]
 		totalWidth = totalWidth + tab.width
 	end
 
@@ -283,7 +283,7 @@ function Template:createTabsBlock(parentBlock)
 	for _, page in ipairs(self.pages) do
 		self:createTab(page)
 	end
-	local firstTab = parentBlock:findChild(self.pages[1].tabUID)
+	local firstTab = parentBlock:findChild(self.pages[1].tabUID) --[[@as tes3uiElement]]
 	firstTab.widget.state = tes3.uiState.active
 
 	-- Next Button
@@ -293,7 +293,7 @@ function Template:createTabsBlock(parentBlock)
 	self.elements.nextTabButton:register(tes3.uiEvent.mouseClick, function()
 		-- Move active tab forward 1
 		for i, page in ipairs(self.pages) do
-			local tab = tabsBlock:findChild(page.tabUID)
+			local tab = tabsBlock:findChild(page.tabUID) --[[@as tes3uiElement]]
 			if tab.widget.state == tes3.uiState.active then
 				self:clickTab(self.pages[table.wrapindex(self.pages, i + 1)])
 				break
@@ -304,7 +304,7 @@ function Template:createTabsBlock(parentBlock)
 	self.elements.previousTabButton:register(tes3.uiEvent.mouseClick, function()
 		-- Move active tab back 1
 		for i, page in ipairs(self.pages) do
-			local tab = tabsBlock:findChild(page.tabUID)
+			local tab = tabsBlock:findChild(page.tabUID) --[[@as tes3uiElement]]
 			if tab.widget.state == tes3.uiState.active then
 				self:clickTab(self.pages[table.wrapindex(self.pages, i - 1)])
 				break
