@@ -170,7 +170,7 @@ end
 --- @param thisPage mwseMCMExclusionsPage|mwseMCMFilterPage|mwseMCMMouseOverPage|mwseMCMPage|mwseMCMSideBarPage
 function Template:clickTab(thisPage)
 	local pageBlock = self.elements.pageBlock
-	
+
 	-- Clear previous page
 	pageBlock:destroyChildren()
 	-- Create new page
@@ -335,7 +335,9 @@ function Template:createContentsContainer(parentBlock)
 end
 
 function Template:register()
-	local mcm = {}
+	local mcm = {
+		template = self
+	}
 
 	--- @param container tes3uiElement
 	mcm.onCreate = function(container)
@@ -350,14 +352,13 @@ function Template:register()
 	end
 
 	mwse.registerModConfig(self.name, mcm)
-	mwse.log("%s mod config registered", self.name)
 end
 
 function Template.__index(tbl, key)
-	-- If the `key` starts with `"create"`, and if there's an `mwse.mcm.create<Component>` method, 
+	-- If the `key` starts with `"create"`, and if there's an `mwse.mcm.create<Component>` method,
 	-- Make a new `Template.create<Component>` method.
 	-- Otherwise, look the value up in the `metatable`.
-	
+
 	if not key:startswith("create") or mwse.mcm[key] == nil then
 		return getmetatable(tbl)[key]
 	end
