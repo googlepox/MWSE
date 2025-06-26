@@ -1277,6 +1277,12 @@ namespace TES3::UI {
 		mwse::lua::cleanupEventRegistrations(self);
 
 		// Clean up stale pointers.
+		const auto worldController = TES3::WorldController::get();
+		const auto menuController = worldController ? worldController->menuController : nullptr;
+		const auto menuInputController = menuController ? menuController->menuInputController : nullptr;
+		if (menuInputController && menuInputController->textInputFocus == self) {
+			menuInputController->textInputFocus = nullptr;
+		}
 		if (MenuInputController::previousTextInputFocus == self) {
 			MenuInputController::previousTextInputFocus = nullptr;
 		}

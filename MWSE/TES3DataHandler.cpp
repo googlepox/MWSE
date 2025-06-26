@@ -658,6 +658,12 @@ namespace TES3 {
 		return TES3_DataHandler_isCellInMemory(this, cell, unknown);
 	}
 
+	std::tuple<int, int> DataHandler::getCellBufferSize() const {
+		using gExteriorCellBufferSize = mwse::ExternalGlobal<int, 0x7C9B48>;
+		using gInteriorCellBufferSize = mwse::ExternalGlobal<int, 0x7C9B10>;
+		return { gInteriorCellBufferSize::get(), gExteriorCellBufferSize::get() };
+	}
+
 	std::reference_wrapper<DataHandler::ExteriorCellData* [9]> DataHandler::getExteriorCellData_lua() {
 		return std::ref(exteriorCellData);
 	}

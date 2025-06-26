@@ -1,12 +1,5 @@
 #pragma once
-#define FMT_HEADER_ONLY
-#include "fmt/include/fmt/format.h"
 #include "CrashLogUtilities.hpp"
-#include <string>
-#include <chrono>
-#include <filesystem>
-#include <mutex>
-#include <vector>
 
 #include "TES3Actor.h"
 #include "TES3ActorAnimationController.h"
@@ -38,6 +31,7 @@
 #include "TES3UIMenuController.h"
 #include "TES3VFXManager.h"
 #include "TES3Weapon.h"
+#include "TES3Weather.h"
 #include "TES3WorldController.h"
 
 #include "NICollisionSwitch.h"
@@ -61,26 +55,28 @@
 #include "MWSEConfig.h"
 #include "MWSEDefs.h"
 
+namespace CrashLogger::Version { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
 namespace CrashLogger::Playtime { inline void Init(); inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
 namespace CrashLogger::Exception { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
 namespace CrashLogger::Thread { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
 namespace CrashLogger::Calltrace { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
+namespace CrashLogger::LuaTraceback { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
 namespace CrashLogger::Registry { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
 namespace CrashLogger::Stack { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
 //namespace CrashLogger::Modules { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
-//namespace CrashLogger::Install { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
+namespace CrashLogger::Install { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
 namespace CrashLogger::Memory { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
-//namespace CrashLogger::Mods { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
+namespace CrashLogger::Mods { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
+namespace CrashLogger::LuaMods { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
 namespace CrashLogger::Device { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
 //namespace CrashLogger::AssetTracker { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
+namespace CrashLogger::Warnings { inline void Process(EXCEPTION_POINTERS* info); inline std::stringstream& Get(); }
 
-namespace CrashLogger::Stack
-{
+namespace CrashLogger::Stack {
 	inline std::string GetLineForObject(void** object, UINT32 depth);
 }
 
-namespace CrashLogger::PDB
-{
+namespace CrashLogger::PDB {
 	inline std::string GetModule(UINT32 eip, HANDLE process);
 	inline UINT32 GetModuleBase(UINT32 eip, HANDLE process);
 	inline std::string GetSymbol(UINT32 eip, HANDLE process);
@@ -88,8 +84,7 @@ namespace CrashLogger::PDB
 	inline std::string GetClassNameFromRTTIorPDB(void* object);
 }
 
-namespace CrashLogger
-{
+namespace CrashLogger {
 	template<typename T>
 	class Dereference {
 		intptr_t pointer;
@@ -101,8 +96,7 @@ namespace CrashLogger
 		Dereference(intptr_t pointer) : pointer(pointer), size(sizeof(T)) {}
 		Dereference(const void* pointer) : pointer((intptr_t)pointer), size(sizeof(T)) {}
 
-		operator bool()
-		{
+		operator bool() {
 			return IsValidPointer();
 		}
 
@@ -111,6 +105,7 @@ namespace CrashLogger
 				return reinterpret_cast<T*>(pointer);
 			}
 
+			return nullptr;
 			//throw std::runtime_error("Bad dereference");
 		}
 
@@ -119,12 +114,12 @@ namespace CrashLogger
 				return reinterpret_cast<T*>(pointer);
 			}
 
+			return nullptr;
 			//throw std::runtime_error("Bad dereference");
 		}
 
 	private:
-		bool IsValidAddress() const
-		{
+		bool IsValidAddress() const {
 			MEMORY_BASIC_INFORMATION mbi;
 			if (::VirtualQuery((void*)pointer, &mbi, sizeof(mbi)))
 			{
@@ -143,18 +138,18 @@ namespace CrashLogger
 			return false;
 		}
 
-		bool AttemptDereference() const
+		bool AttemptDereference() const {
 			try {
-			// Attempt to read the address as a UINT32
-			volatile UINT32 temp = *reinterpret_cast<const volatile UINT32*>(pointer);
-			return true;
-		}
-		catch (...) {
-			return false;
+				// Attempt to read the address as a UINT32
+				volatile UINT32 temp = *reinterpret_cast<const volatile UINT32*>(pointer);
+				return true;
+			}
+			catch (...) {
+				return false;
+			}
 		}
 
-		bool IsVtableValid() const
-		{
+		bool IsVtableValid() const {
 			//			if (vtables_.find(vtable) == vtables_.end()) return false;
 
 			UINT32 vtable = *reinterpret_cast<UINT32*>(pointer);
@@ -164,46 +159,38 @@ namespace CrashLogger
 			return false;
 		}
 
-		bool IsValidPointer() const
+		bool IsValidPointer() const {
 			try {
-			if (!IsValidAddress()) return false;
-
-			if (!AttemptDereference()) return false;
-
-			if (!IsVtableValid()) return false;
-
-			return true;
-		}
-		catch (...)
-		{
-			return false;
+				if (!IsValidAddress()) return false;
+				if (!AttemptDereference()) return false;
+				if (!IsVtableValid()) return false;
+				return true;
+			}
+			catch (...) {
+				return false;
+			}
 		}
 	};
 }
 
-namespace CrashLogger::Labels
-{
+namespace CrashLogger::Labels {
 	inline std::string AsUINT32(void* ptr) { return fmt::format("{:#08X}", **static_cast<UINT32**>(ptr)); }
 
-	template<typename T> std::string As(void* ptr)
-	{
+	template<typename T> std::string As(void* ptr) {
 		try {
-			if (auto sanitized = Dereference<T>((UINT32)ptr))
-			{
+			if (auto sanitized = Dereference<T>((UINT32)ptr)) {
 				return LogClassLineByLine(*sanitized);
 			}
 			else {
 				return "Unable to dereference";
 			}
 		}
-		catch (...)
-		{
+		catch (...) {
 			return "Failed to format";
 		}
 	}
 
-	class Label
-	{
+	class Label {
 		static inline std::vector<std::unique_ptr<Label>> labels;
 		typedef std::string(*FormattingHandler)(void* ptr);
 		static inline FormattingHandler lastHandler = nullptr;
@@ -232,8 +219,7 @@ namespace CrashLogger::Labels
 		};
 
 
-		bool Satisfies(void* ptr) const
-		{
+		bool Satisfies(void* ptr) const {
 			__try {
 				return *static_cast<UINT32*>(ptr) >= address && *static_cast<UINT32*>(ptr) <= address + size;
 			}
@@ -243,8 +229,7 @@ namespace CrashLogger::Labels
 			}
 		}
 
-		static std::string GetTypeName(void* ptr)
-		{
+		static std::string GetTypeName(void* ptr) {
 			return PDB::GetClassNameFromRTTIorPDB(ptr);
 		}
 
@@ -252,15 +237,13 @@ namespace CrashLogger::Labels
 
 		virtual std::string GetName(void* object) const { return name; }
 
-		virtual std::string GetDescription(void* object) const
-		{
+		virtual std::string GetDescription(void* object) const {
 			if (function) return function(object);
 			return "";
 		}
 	};
 
-	class LabelClass : public Label
-	{
+	class LabelClass : public Label {
 	public:
 		using Label::Label;
 
@@ -269,16 +252,14 @@ namespace CrashLogger::Labels
 		std::string GetName(void* object) const override { return name.empty() ? GetTypeName(object) : name; }
 	};
 
-	class LabelGlobal : public Label
-	{
+	class LabelGlobal : public Label {
 	public:
 		using Label::Label;
 
 		std::string GetLabelName() const override { return "Global"; }
 	};
 
-	class LabelEmpty : public Label
-	{
+	class LabelEmpty : public Label {
 	public:
 		using Label::Label;
 	};
@@ -289,8 +270,7 @@ namespace CrashLogger::Labels
 
 	void FillMWSELabels();
 
-	inline void FillLabels()
-	{
+	inline void FillLabels() {
 		FillMWSELabels();
 	}
 }

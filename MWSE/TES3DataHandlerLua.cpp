@@ -126,6 +126,7 @@ namespace mwse::lua {
 			usertypeDefinition["worldPickObjectRoot"] = sol::readonly_property(&TES3::DataHandler::worldPickObjectRoot);
 
 			// Basic function binding.
+			usertypeDefinition["getCellBufferSizes"] = &TES3::DataHandler::getCellBufferSize;
 			usertypeDefinition["updateCollisionGroupsForActiveCells"] = &TES3::DataHandler::updateCollisionGroupsForActiveCells;
 			usertypeDefinition["updateLightingForExteriorCells"] = &TES3::DataHandler::updateLightingForExteriorCells;
 

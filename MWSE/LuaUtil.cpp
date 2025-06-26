@@ -486,25 +486,35 @@ namespace mwse::lua {
 	}
 
 	void logStackTrace(const char* message) {
+		std::string stackTrace = getStackTrace(true);
+
+		if (message != nullptr) {
+			log::getLog() << message << std::endl;
+		}
+
+		log::getLog() << stackTrace << std::endl;
+	}
+
+	std::string getStackTrace(bool removePrefix) {
 		auto stateHandle = LuaManager::getInstance().getThreadSafeStateHandle();
 		auto& state = stateHandle.state;
 		static sol::protected_function luaDebugTraceback = state["debug"]["traceback"];
 
 		sol::protected_function_result result = luaDebugTraceback();
 		if (!result.valid()) {
-			return;
+			return "";
 		}
 
-		sol::optional<std::string> asString = result;
-		if (!asString) {
-			return;
+		if (result.get_type() != sol::type::string) {
+			return "";
 		}
 
-		if (message != nullptr) {
-			log::getLog() << message << std::endl;
+		std::string stackTrace = result;
+		if (removePrefix) {
+			stackTrace.erase(0, sizeof("stack traceback:"));
 		}
 
-		log::getLog() << asString.value() << std::endl;
+		return stackTrace;
 	}
 
 	void reportErrorInGame(const char* sourceName, const sol::error& error) {

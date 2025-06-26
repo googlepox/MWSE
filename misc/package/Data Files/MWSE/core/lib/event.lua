@@ -289,9 +289,11 @@ function errorNotifier.clearMsg()
 	local menu = tes3ui.findMenu("MWSE:ErrorNotify")
 	if menu then
 		local list = menu:findChild("MWSE:ErrorNotify_Listing")
-		for i = 1, errorNotifier.visible_error_limit do
-			list.children[i].text = ""
-			list.children[i].visible = false
+		if (list) then
+			for i = 1, errorNotifier.visible_error_limit do
+				list.children[i].text = ""
+				list.children[i].visible = false
+			end
 		end
 
 		menu.visible = false
@@ -306,12 +308,14 @@ function errorNotifier.updateMenu()
 	end
 
 	local list = menu:findChild("MWSE:ErrorNotify_Listing")
-	for i, display in ipairs(errorNotifier.displayed) do
-		list.children[i].text = display.msg
-		list.children[i].visible = true
+	if (list) then
+		for i, display in ipairs(errorNotifier.displayed) do
+			list.children[i].text = display.msg
+			list.children[i].visible = true
 
-		if i >= errorNotifier.visible_error_limit then
-			break
+			if i >= errorNotifier.visible_error_limit then
+				break
+			end
 		end
 	end
 

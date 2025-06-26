@@ -78,6 +78,7 @@ end
 
 -- Gather a list of mods to execute.
 local runtimes = table.values(mwse.activeLuaMods) --- @diagnostic disable-line
+mwse.runtimes = runtimes
 
 -- Figure out some common data from the metadata.
 for _, runtime in ipairs(runtimes) do

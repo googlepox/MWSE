@@ -33,6 +33,10 @@ namespace TES3::UI {
 	}
 
 	void MenuInputController::acquireTextInput(Element* element) {
+		if (element && !element->isValid()) {
+			throw std::invalid_argument("Element passed is not valid.");
+		}
+
 		// Set target for buffered text input
 		textInputFocus = element;
 

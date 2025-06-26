@@ -20,17 +20,17 @@ tes3actor = {}
 --- Returns the combined value of all the items worn by the actor.
 --- @param params tes3actor.getEquipmentValue.params This table accepts the following values:
 --- 
---- `useDurability`: boolean? — *Default*: `false`. If true, damaged items will have a proportionally lower value.
+--- `useDurability?`: boolean — *Default*: `false`. If true, damaged items will have a proportionally lower value.
 --- @return number value The value of each equipped item added together.
 function tes3actor:getEquipmentValue(params) end
 
 ---Table parameter definitions for `tes3actor.getEquipmentValue`.
 --- @class tes3actor.getEquipmentValue.params
---- @field useDurability boolean? *Default*: `false`. If true, damaged items will have a proportionally lower value.
+--- @field useDurability? boolean *Default*: `false`. If true, damaged items will have a proportionally lower value.
 
 --- Checks if the actor has provided item equipped.
 --- @param item tes3alchemy|tes3apparatus|tes3armor|tes3book|tes3clothing|tes3ingredient|tes3item|tes3light|tes3lockpick|tes3misc|tes3probe|tes3repairTool|tes3weapon|string The item to perform a check for.
---- @param itemData tes3itemData? *Optional*. No description yet available.
+--- @param itemData? tes3itemData *Optional*. No description yet available.
 --- @return boolean result No description yet available.
 function tes3actor:hasItemEquipped(item, itemData) end
 

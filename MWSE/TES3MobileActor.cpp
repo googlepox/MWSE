@@ -31,6 +31,7 @@
 #include "TES3MagicEffectInstance.h"
 #include "TES3MagicInstanceController.h"
 #include "TES3MobManager.h"
+#include "TES3MobileCreature.h"
 #include "TES3MobilePlayer.h"
 #include "TES3ItemData.h"
 #include "TES3Race.h"
@@ -1152,6 +1153,14 @@ namespace TES3 {
 		}
 	}
 
+	bool MobileActor::isCreature() const {
+		return actorType == MobileActorType::Creature;
+	}
+
+	bool MobileActor::isPlayer() const {
+		return actorType == MobileActorType::Player;
+	}
+
 	float MobileActor::getWidth() const {
 		return reference->getScale() * float(widthRescaled) / 32.0f;
 	}
@@ -1692,6 +1701,40 @@ namespace TES3 {
 
 	void MobileActor::setFlagWerewolf(bool value) {
 		setMobileActorFlag(MobileActorFlag::Werewolf, value);
+	}
+
+	bool MobileActor::hasStatistic(const Statistic* statistic) const {
+		// Check common statistics.
+		if (statistic == &health) return true;
+		if (statistic == &magicka) return true;
+		if (statistic == &magickaMultiplier) return true;
+		if (statistic == &fatigue) return true;
+		if (statistic == &encumbrance) return true;
+
+		// Check common attributes.
+		for (int i = Attribute::FirstAttribute; i <= Attribute::LastAttribute; ++i) {
+			if (statistic == &attributes[i]) return true;
+		}
+
+		// Check subtype statistics.
+		if (isCreature()) {
+			const auto asCreature = static_cast<const MobileCreature*>(this);
+
+			// Check skills.
+			for (int i = CreatureSkillID::FirstSkill; i <= CreatureSkillID::LastSkill; ++i) {
+				if (statistic == &asCreature->skills[i]) return true;
+			}
+		}
+		else {
+			const auto asNPC = static_cast<const MobileNPC*>(this);
+
+			// Check skills.
+			for (int i = SkillID::FirstSkill; i <= SkillID::LastSkill; ++i) {
+				if (statistic == &asNPC->skills[i]) return true;
+			}
+		}
+
+		return false;
 	}
 
 	Statistic* MobileActor::getAttributeAgility() {

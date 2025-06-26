@@ -1,31 +1,24 @@
 #include "CrashLogger.hpp"
-#include <ranges>
-#include <iostream>
-#include <ios>
-#include <istream>
 
-namespace CrashLogger
-{
+#include "StringUtil.h"
 
-	inline bool GetStringForClassLabel(void* object, std::string& labelName, std::string& objectName, std::string& description)
-	{
-		try
-		{
+namespace CrashLogger {
+	inline bool GetStringForClassLabel(void* object, std::string& labelName, std::string& objectName, std::string& description) {
+		try {
 			static bool fillLables = false;
 
-			if (!fillLables)
-			{
+			if (!fillLables) {
 				Labels::FillLabels();
 				fillLables = true;
 			}
 
-			for (const auto& iter : Labels::Label::GetAll()) if (iter && iter->Satisfies(object))
-			{
+			for (const auto& iter : Labels::Label::GetAll()) if (iter && iter->Satisfies(object)) {
 				labelName = iter->GetLabelName();
 				objectName = iter->GetName(object);
 				description = iter->GetDescription(object);
 				return true;
 			}
+
 			return false;
 		}
 		catch (...) {
@@ -33,60 +26,38 @@ namespace CrashLogger
 		}
 	}
 
-	bool GetAsString(const void* object, std::string& labelName, std::string& string)
-	{
-		try {
-			const auto printable = [](const char a_ch) noexcept {
-				if (' ' <= a_ch && a_ch <= '~') return true;
+	bool GetAsString(const void* object, std::string& labelName, std::string& string) {
+		if (object == nullptr) return false;
 
-				switch (a_ch) {
-				case '\t':
-				case '\n':
-					return true;
-				default:
-					return false;
-				}
-				};
+		try {
 			const auto cstr = static_cast<const char*>(object);
-			if (object == NULL || cstr == NULL) return false;
-			constexpr std::size_t max = MAX_PATH;
 			std::size_t len = 0;
-			for (; len < max && cstr && cstr[len] != '\0'; ++len) {
-				if (!printable(cstr[len])) {
+			for (auto itt = cstr; *itt != '\0'; ++itt) {
+				if (!mwse::string::is_printable(*itt)) {
 					return false;
 				}
+				len++;
 			}
-			if (len == 0 || len >= max || len < 3) return false;
-			const auto str = SanitizeString(cstr);
-			// Check if string is equal to a predefined prefix and print out the file name if true
-			if (const auto pos = str.find("D:\\_Fallout3\\"); pos == std::string::npos) {
-				labelName = "String";
-				string = str;
-			}
-			else {
-				const std::filesystem::path path = str.substr(pos);
-				labelName = "Source";
-				string = path.filename().string();
-			}
+
+			// Ignore small strings.
+			if (len < 3) return false;
+
+			labelName = "String";
+			string = SanitizeString(cstr);
 			return true;
 		}
 		catch (...) {
 			return false;
 		}
-
 	}
-	}
+}
 
-namespace CrashLogger::Registry
-{
+namespace CrashLogger::Registry {
 	std::stringstream output;
 
-	extern void Process(EXCEPTION_POINTERS* info)
-	{
-		try
-		{
-			output << "Registry:" << '\n'
-				<< fmt::format("REG | {:^10} | DEREFERENCE INFO", "Value") << '\n';
+	extern void Process(EXCEPTION_POINTERS* info) {
+		try {
+			output << fmt::format("REG | {:^10} | DEREFERENCE INFO", "Value") << '\n';
 
 			const std::map<std::string, UINT32> registers{
 				{ "eax", info->ContextRecord->Eax },
@@ -100,8 +71,7 @@ namespace CrashLogger::Registry
 				{ "eip", info->ContextRecord->Eip },
 			};
 
-			for (const auto& [name, value] : registers)
-			{
+			for (const auto& [name, value] : registers) {
 				std::stringstream str;
 				str << fmt::format("{} | 0x{:08X} | ", name, value);
 				std::string buffer = Stack::GetLineForObject((void**)value, 5);
@@ -111,38 +81,37 @@ namespace CrashLogger::Registry
 				output << str.str() << '\n';
 			}
 		}
-		catch (...) { output << "Failed to log registry." << '\n'; }
+		catch (...) {
+			output << "Failed to log registry." << '\n';
+		}
 	}
 
 	extern std::stringstream& Get() { output.flush(); return output; }
 }
 
-namespace CrashLogger::Stack
-{
+namespace CrashLogger::Stack {
 	std::map<UINT32, UINT8> memoize;
 
 	std::stringstream output;
 
-	bool GetStringForRTTIorPDB(void** object, std::string& buffer)
+	bool GetStringForRTTIorPDB(void** object, std::string& buffer) {
 		try {
-		//		if (*(UINT32*)object > VFTableLowerLimit() && *(UINT32*)object < 0x1200000)
-			{
-				if (const auto& name = PDB::GetClassNameFromRTTIorPDB((void*)object); !name.empty())
-				{
-					buffer += fmt::format("0x{:08X} ==> RTTI: ", *(UINT32*)object) + name;
-					return true;
-				}
+			//		if (*(UINT32*)object > VFTableLowerLimit() && *(UINT32*)object < 0x1200000)
+			if (const auto& name = PDB::GetClassNameFromRTTIorPDB((void*)object); !name.empty()) {
+				buffer += fmt::format("0x{:08X} ==> RTTI: ", *(UINT32*)object) + name;
+				return true;
 			}
 			return false;
+		}
+		catch (...) {
+			return false;
+		}
 	}
-	catch (...) { return false; }
 
-	bool GetStringForLabel(void** object, std::string& buffer)
-	{
+	bool GetStringForLabel(void** object, std::string& buffer) {
 		try {
 			std::string labelName, objectName, description;
-			if (GetStringForClassLabel(object, labelName, objectName, description))
-			{
+			if (GetStringForClassLabel(object, labelName, objectName, description)) {
 				buffer += fmt::format("0x{:08X} ==> ", *(UINT32*)object) + labelName + ": " + objectName + ": " + description;
 				return true;
 			}
@@ -150,8 +119,7 @@ namespace CrashLogger::Stack
 				return true;
 			}
 
-			if (GetAsString(object, labelName, description))
-			{
+			if (GetAsString(object, labelName, description)) {
 				buffer += fmt::format("0x{:08X} ==> ", *(UINT32*)object) + labelName + ": " + '"' + description + '"';
 				return true;
 			}
@@ -162,8 +130,7 @@ namespace CrashLogger::Stack
 		}
 	}
 
-	bool GetStringForLabelSEH(void** object, std::string& buffer)
-	{
+	bool GetStringForLabelSEH(void** object, std::string& buffer) {
 		__try {
 			return GetStringForLabel(object, buffer);
 		}
@@ -172,16 +139,14 @@ namespace CrashLogger::Stack
 		}
 	}
 
-	std::string GetLineForObject(void** object, UINT32 depth)
-	{
+	std::string GetLineForObject(void** object, UINT32 depth) {
 		if (!object) return "";
 		std::string buffer;
 		UINT32 deref = 0;
-		do
-		{
+		do {
 			if (GetStringForLabelSEH(object, buffer)) {
 				return buffer;
-			} 
+			}
 			deref = Dereference<UINT32>(object);
 			buffer += fmt::format("0x{:08X} ==> ", deref);
 			object = (void**)deref;
@@ -194,34 +159,37 @@ namespace CrashLogger::Stack
 	UINT32 GetESPi(UINT32* esp, UINT32 i) try { return esp[i]; }
 	catch (...) { return 0; }
 
-	extern void Process(EXCEPTION_POINTERS* info)
+	extern void Process(EXCEPTION_POINTERS* info) {
 		try {
-		output << "Stack:" << '\n' << fmt::format("  # | {:^10} | DEREFERENCE INFO", "Value") << '\n';
-		const auto esp = reinterpret_cast<UINT32*>(info->ContextRecord->Esp);
-		std::vector<int> iotaVec(0x100);
-		std::iota(iotaVec.begin(), iotaVec.end(), 0);
-		for (unsigned int i : iotaVec) {
-			const auto espi = GetESPi(esp, i);
-			const auto str = Stack::GetLineForObject((void**)espi, 5);
-			if (i <= 0x8 || (!str.empty() && memoize.find(espi) == memoize.end()))
-			{
-				std::stringstream line;
-				line << fmt::format(" {:2X} | 0x{:08X} | ", i, espi);
-				if (memoize.find(espi) == memoize.end())
-				{
-					if (!str.empty()) line << str;
-					memoize.emplace(espi, i);
-				}
-				else
-				{
-					line << fmt::format("Identical to {:2X}", memoize[espi]);
-				}
-				output << line.str() << '\n';
+			output << fmt::format("  # | {:^10} | DEREFERENCE INFO", "Value") << '\n';
+			const auto esp = reinterpret_cast<UINT32*>(info->ContextRecord->Esp);
+			std::vector<int> iotaVec(0x100);
+			std::iota(iotaVec.begin(), iotaVec.end(), 0);
+			for (unsigned int i : iotaVec) {
+				const auto espi = GetESPi(esp, i);
+				const auto str = Stack::GetLineForObject((void**)espi, 5);
+				if (i <= 0x8 || (!str.empty() && memoize.find(espi) == memoize.end())) {
+					std::stringstream line;
+					line << fmt::format(" {:2X} | 0x{:08X} | ", i, espi);
+					if (memoize.find(espi) == memoize.end()) {
+						if (!str.empty()) line << str;
+						memoize.emplace(espi, i);
+					}
+					else {
+						line << fmt::format("Identical to {:2X}", memoize[espi]);
+					}
+					output << line.str() << '\n';
 
+				}
 			}
 		}
+		catch (...) {
+			output << "Failed to log stack." << '\n';
+		}
 	}
-	catch (...) { output << "Failed to log stack." << '\n'; }
 
-	extern std::stringstream& Get() { output.flush(); return output; }
+	extern std::stringstream& Get() {
+		output.flush();
+		return output;
+	}
 }

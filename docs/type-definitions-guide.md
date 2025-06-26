@@ -87,6 +87,7 @@ Each type method definition file is just a regular Lua table with the following 
 | ----------- | -------- | ----------- |
 | type        | `string` | The type of the definition. This flag is used when generating syntax highlighting files. This should always be `"method"` for method defintions. |
 | description | `string` | The description for the method. |
+| generics    | `table`  | The generics available as types for arguments and return values. |
 | arguments   | `table`  | The arguments the function accepts. |
 | examples    | `table`  | A table with entries that are the names of the files included as examples. Each entry is a table itself with one available field, `title`. The title will be shown as the title of the example on the documentation page. It works the same as examples for [event](https://github.com/MWSE/MWSE/blob/master/docs/event-definitions-guide.md) or [function](https://github.com/MWSE/MWSE/blob/master/docs/function-definitions-guide.md) definitions. |
 | returns     | `table`  | The table with return values. |

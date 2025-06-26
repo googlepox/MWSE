@@ -1970,7 +1970,10 @@ namespace mwse::lua {
 
 		// Try to get our statistic.
 		TES3::MobileActor* mobile = maybeMobile.as<TES3::MobileActor*>();
-		TES3::Statistic* statistic = nullptr;
+		auto statistic = getOptionalParam<TES3::Statistic*>(params, "statistic", nullptr);
+		if (statistic && !mobile->hasStatistic(statistic)) {
+			throw std::invalid_argument("tes3.setStatistic: The given statistic does not belong to the given mobile.");
+		}
 		sol::optional<const char*> statisticName = params["name"];
 		sol::optional<int> statisticSkill = params["skill"];
 		sol::optional<int> statisticAttribute = params["attribute"];
@@ -2103,7 +2106,10 @@ namespace mwse::lua {
 
 		// Try to get our statistic.
 		TES3::MobileActor* mobile = maybeMobile.as<TES3::MobileActor*>();
-		TES3::Statistic* statistic = nullptr;
+		auto statistic = getOptionalParam<TES3::Statistic*>(params, "statistic", nullptr);
+		if (statistic && !mobile->hasStatistic(statistic)) {
+			throw std::invalid_argument("tes3.modStatistic: The given statistic does not belong to the given mobile.");
+		}
 		sol::optional<const char*> statisticName = params["name"];
 		sol::optional<int> statisticSkill = params["skill"];
 		sol::optional<int> statisticAttribute = params["attribute"];
@@ -4587,7 +4593,7 @@ namespace mwse::lua {
 			throw std::invalid_argument("Invalid actor parameter provided.");
 		}
 
-		auto rng = rand() % 100;
+		auto rng = tes3::rand() % 100;
 
 		auto index = getOptionalParam<int>(params, "index", -1);
 

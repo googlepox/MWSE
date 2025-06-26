@@ -162,7 +162,8 @@ namespace TES3 {
 			}
 
 			// If the owner type is changing, reset the requirement.
-			if (owner->objectType != newOwner->objectType) {
+			const auto oldOwnerType = owner ? owner->objectType : ObjectType::Invalid;
+			if (oldOwnerType != newOwner->objectType) {
 				requiredVariable = nullptr;
 			}
 
@@ -194,6 +195,9 @@ namespace TES3 {
 			if (value.is<int>()) {
 				requiredRank = value.as<int>();
 			}
+			else if (value == sol::nil) {
+				requiredRank = 0;
+			}
 			else {
 				throw std::exception("Faction ownership used. Requirement must be a rank (number).");
 			}
@@ -201,6 +205,9 @@ namespace TES3 {
 		else if (owner->objectType == TES3::ObjectType::NPC) {
 			if (value.is<TES3::GlobalVariable*>()) {
 				requiredVariable = value.as<TES3::GlobalVariable*>();
+			}
+			else if (value == sol::nil) {
+				requiredVariable = nullptr;
 			}
 			else {
 				throw std::exception("NPC ownership used. Requirement must be a global variable.");
@@ -230,6 +237,9 @@ namespace TES3 {
 		}
 		else if (actor.is<TES3::CreatureInstance*>()) {
 			soul = actor.as<TES3::CreatureInstance*>()->baseCreature;
+		}
+		else if (actor == sol::nil) {
+			soul = nullptr;
 		}
 	}
 

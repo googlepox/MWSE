@@ -18,20 +18,6 @@
     <ClInclude Include="CrashLogFormatter.hpp" />
     <ClInclude Include="CrashLogger.hpp" />
     <ClInclude Include="CrashLogUtilities.hpp" />
-    <ClInclude Include="fmt\include\fmt\args.h" />
-    <ClInclude Include="fmt\include\fmt\base.h" />
-    <ClInclude Include="fmt\include\fmt\chrono.h" />
-    <ClInclude Include="fmt\include\fmt\color.h" />
-    <ClInclude Include="fmt\include\fmt\compile.h" />
-    <ClInclude Include="fmt\include\fmt\core.h" />
-    <ClInclude Include="fmt\include\fmt\format-inl.h" />
-    <ClInclude Include="fmt\include\fmt\format.h" />
-    <ClInclude Include="fmt\include\fmt\os.h" />
-    <ClInclude Include="fmt\include\fmt\ostream.h" />
-    <ClInclude Include="fmt\include\fmt\printf.h" />
-    <ClInclude Include="fmt\include\fmt\ranges.h" />
-    <ClInclude Include="fmt\include\fmt\std.h" />
-    <ClInclude Include="fmt\include\fmt\xchar.h" />
     <ClInclude Include="LuaCalcChargenStatsEvent.h" />
     <ClInclude Include="LuaCalcHitDetectionConeEvent.h" />
     <ClInclude Include="LuaCalcTouchSpellConeEvent.h" />
@@ -768,6 +754,7 @@
     <ClCompile Include="NICollisionSwitch.cpp" />
     <ClCompile Include="NICopyTransformController.cpp" />
     <ClCompile Include="NIDirectionalLight.cpp" />
+    <ClCompile Include="NIDX8Renderer.cpp" />
     <ClCompile Include="NIDX8TextureData.cpp" />
     <ClCompile Include="NIDynamicEffectLua.cpp" />
     <ClCompile Include="NIExtraData.cpp" />
@@ -1313,13 +1300,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)deps\boost;$(SolutionDir)deps\LuaJIT\src;$(SolutionDir)deps\sol\include;$(SolutionDir)deps\span-lite;$(SolutionDir)deps\DirectX8\include;$(SolutionDir)deps\yaml-cpp\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)deps\boost;$(SolutionDir)deps\LuaJIT\src;$(SolutionDir)deps\sol\include;$(SolutionDir)deps\span-lite;$(SolutionDir)deps\DirectX8\include;$(SolutionDir)deps\yaml-cpp\include;$(SolutionDir)deps\fmt\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <LibraryPath>$(OutDir);$(SolutionDir)deps\LuaJIT\src;$(SolutionDir)deps\yaml-cpp\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)deps\boost;$(SolutionDir)deps\LuaJIT\src;$(SolutionDir)deps\sol\include;$(SolutionDir)deps\span-lite;$(SolutionDir)deps\DirectX8\include;$(SolutionDir)deps\yaml-cpp\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)deps\boost;$(SolutionDir)deps\LuaJIT\src;$(SolutionDir)deps\sol\include;$(SolutionDir)deps\span-lite;$(SolutionDir)deps\DirectX8\include;$(SolutionDir)deps\yaml-cpp\include;$(SolutionDir)deps\fmt\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <LibraryPath>$(OutDir);$(SolutionDir)deps\LuaJIT\src;$(SolutionDir)deps\yaml-cpp\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
