@@ -234,6 +234,66 @@ namespace CrashLogger::Calltrace {
 	extern std::stringstream& Get() { output.flush(); return output; }
 }
 
+namespace CrashLogger::MorrowindScript {
+	std::stringstream output;
+
+	static const char* SafeGetObjectId(const TES3::BaseObject* object) {
+		__try {
+			return object->getObjectID();
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			return nullptr;
+		}
+	}
+
+	static const char* SafeGetSourceFile(const TES3::BaseObject* object) {
+		__try {
+			return object->getSourceFilename();
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			return nullptr;
+		}
+	}
+
+	template <typename T>
+	static void safePrintObject(const char* title, const T* object) {
+		if (object) {
+			const auto id = SafeGetObjectId(object);
+			const auto source = SafeGetSourceFile(object);
+			output << "  " << title << ": " << (id ? id : "<memory corrupted>") << " (" << (source ? source : "<memory corrupted>") << ")\n";
+			if (id) {
+				mwse::log::prettyDump(object, output);
+			}
+		}
+		else {
+			output << "  " << title << ": nullptr\n";
+		}
+	}
+
+	extern void Process(EXCEPTION_POINTERS* info) {
+		try {
+			if (TES3::Script::currentlyExecutingScript) {
+				output << "Currently executing mwscript context:\n";
+				safePrintObject("Script", TES3::Script::currentlyExecutingScript);
+				safePrintObject("Reference", TES3::Script::currentlyExecutingScriptReference);
+				output << "  OpCode: 0x" << std::hex << *reinterpret_cast<DWORD*>(0x7A91C4) << "\n";
+				output << "  Cursor Offset: 0x" << std::hex << *reinterpret_cast<DWORD*>(0x7CEBB0) << "\n";
+			}
+			else {
+				output << "No mwscript instance running.\n";
+			}
+		}
+		catch (...) {
+			output << "Failed to process mwscript state traceback." << '\n';
+		}
+	}
+
+	extern std::stringstream& Get() {
+		output.flush();
+		return output;
+	}
+}
+
 namespace CrashLogger::LuaTraceback {
 	std::stringstream output;
 
@@ -307,7 +367,7 @@ namespace CrashLogger::LuaMods {
 	extern void Process(EXCEPTION_POINTERS* info) {
 		try {
 			const auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
-			const auto& lua = stateHandle.state;
+			const auto& lua = stateHandle.getState();
 			sol::table luaMWSE = lua["mwse"];
 			sol::table luaRuntimes = luaMWSE["runtimes"];
 

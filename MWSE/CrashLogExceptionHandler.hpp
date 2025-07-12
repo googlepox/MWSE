@@ -459,6 +459,15 @@ namespace CrashLogger {
 		}
 	}
 
+	inline void LogMorrowindScriptState(EXCEPTION_POINTERS* info) {
+		__try {
+			MorrowindScript::Process(info);
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			mwse::log::getLog() << ("Failed to log mwscript state. \n");
+		}
+	}
+
 	inline void LogLuaTraceback(EXCEPTION_POINTERS* info) {
 		__try {
 			LuaTraceback::Process(info);
@@ -563,6 +572,7 @@ namespace CrashLogger {
 		LogRegistry(info);
 		//mwse_log << ("Processing stack \n");
 		LogStack(info);
+		LogMorrowindScriptState(info);
 		//mwse_log << ("Processing mods);
 		LogMods(info);
 		LogLuaMods(info);
@@ -589,6 +599,8 @@ namespace CrashLogger {
 		mwse_log << ("%s", LuaTraceback::Get().str().c_str());
 		mwse_log << ("=== REGISTRY: ==========================================================================================================\n");
 		mwse_log << ("%s", Registry::Get().str().c_str());
+		mwse_log << ("=== MWSCRIPT STATE: ====================================================================================================\n");
+		mwse_log << ("%s", MorrowindScript::Get().str().c_str());
 		mwse_log << ("=== STACK: =============================================================================================================\n");
 		mwse_log << ("%s", Stack::Get().str().c_str());
 		mwse_log << ("==== MODS: =============================================================================================================\n");
@@ -636,9 +648,4 @@ namespace CrashLogger {
 		if (s_originalFilter) s_originalFilter(info); // don't return
 		return !ignored ? EXCEPTION_CONTINUE_SEARCH : EXCEPTION_EXECUTE_HANDLER;
 	};
-
-	inline LPTOP_LEVEL_EXCEPTION_FILTER WINAPI FakeSetUnhandledExceptionFilter(__in LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter) {
-		s_originalFilter = lpTopLevelExceptionFilter;
-		return nullptr;
-	}
 }

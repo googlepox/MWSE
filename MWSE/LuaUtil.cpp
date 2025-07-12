@@ -496,8 +496,8 @@ namespace mwse::lua {
 	}
 
 	std::string getStackTrace(bool removePrefix) {
-		auto stateHandle = LuaManager::getInstance().getThreadSafeStateHandle();
-		auto& state = stateHandle.state;
+		const auto stateHandle = LuaManager::getInstance().getThreadSafeStateHandle();
+		auto& state = stateHandle.getState();
 		static sol::protected_function luaDebugTraceback = state["debug"]["traceback"];
 
 		sol::protected_function_result result = luaDebugTraceback();
@@ -522,8 +522,8 @@ namespace mwse::lua {
 			return;
 		}
 
-		auto stateHandle = LuaManager::getInstance().getThreadSafeStateHandle();
-		auto& state = stateHandle.state;
+		const auto stateHandle = LuaManager::getInstance().getThreadSafeStateHandle();
+		auto& state = stateHandle.getState();
 		static sol::table errorNotifier = state["event"]["errorNotifier"];
 		static sol::protected_function reporter = errorNotifier["reportError"];
 

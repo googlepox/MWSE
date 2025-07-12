@@ -47,9 +47,9 @@ namespace TES3 {
 	//
 
 	ItemData::LuaData::LuaData() {
-		auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
-		data = stateHandle.state.create_table();
-		tempData = stateHandle.state.create_table();
+		const auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
+		data = stateHandle.getState().create_table();
+		tempData = stateHandle.getState().create_table();
 	}
 
 	ItemData::ItemData() {
@@ -71,7 +71,7 @@ namespace TES3 {
 		ItemDataVanilla::dtor(self);
 
 		if (self->luaData) {
-			auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
+			const auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
 			delete self->luaData;
 			self->luaData = nullptr;
 		}
@@ -135,8 +135,8 @@ namespace TES3 {
 
 		// Lua data.
 		if (itemData->luaData) {
-			auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
-			static sol::protected_function fnTableEmpty = stateHandle.state["table"]["empty"];
+			const auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
+			static sol::protected_function fnTableEmpty = stateHandle.getState()["table"]["empty"];
 			if (!fnTableEmpty(itemData->luaData->data, true) || !fnTableEmpty(itemData->luaData->tempData, true)) {
 				return false;
 			}

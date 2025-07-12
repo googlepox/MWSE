@@ -149,6 +149,14 @@ namespace TES3::UI {
 		return statsMenuEnabled;
 	}
 
+	bool MenuController::getShowCombatStats() const {
+		return BITMASK_TEST(gameplayFlags, MenuControllerGameplayFlags::ShowCombatStats);
+	}
+
+	void MenuController::setShowCombatStats(bool state) {
+		BITMASK_SET(gameplayFlags, MenuControllerGameplayFlags::ShowCombatStats, state);
+	}
+
 	bool MenuController::getGodModeEnabled() const {
 		return BITMASK_TEST(gameplayFlags, MenuControllerGameplayFlags::GodModeEnabled);
 	}
@@ -272,6 +280,14 @@ namespace TES3::UI {
 			UI::hideCursor();
 			UI::closeDialogueMenu();
 		}
+	}
+
+	bool MenuController::getShowKillStats() const {
+		return BITMASK_TEST(gameplayFlags, MenuControllerGameplayFlags::KillStats);
+	}
+
+	void MenuController::setShowKillStats(bool state) {
+		BITMASK_SET(gameplayFlags, MenuControllerGameplayFlags::KillStats, state);
 	}
 
 	bool MenuController::getScriptsDisabled() const {

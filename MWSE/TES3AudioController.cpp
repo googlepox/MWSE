@@ -12,7 +12,7 @@ namespace TES3 {
 		std::string filename = _filename;
 
 		if (mwse::lua::event::MusicChangeTrackEvent::getEventEnabled()) {
-			auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
+			const auto stateHandle = mwse::lua::LuaManager::getInstance().getThreadSafeStateHandle();
 			sol::table eventData = stateHandle.triggerEvent(new mwse::lua::event::MusicChangeTrackEvent(_filename, volume, crossfadeMillis, (int)WorldController::get()->musicSituation));
 			if (eventData.valid()) {
 				sol::optional<std::string> musicPath = eventData["music"];

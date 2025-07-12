@@ -43,8 +43,8 @@ namespace mwse {
 	// Let lua muck with all this.
 	void Configuration::bindToLua() {
 		// Get our lua state.
-		auto stateHandle = lua::LuaManager::getInstance().getThreadSafeStateHandle();
-		auto& state = stateHandle.state;
+		const auto stateHandle = lua::LuaManager::getInstance().getThreadSafeStateHandle();
+		auto& state = stateHandle.getState();
 
 		defaultConfig = state.create_table();
 

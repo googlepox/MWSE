@@ -89,16 +89,21 @@ namespace mwse::patch {
 
 	template <typename T>
 	void safePrintObjectToLog(const char* title, const T* object) {
+		safePrintObject(title, object, log::getLog());
+	}
+
+	template <typename T>
+	void safePrintObject(const char* title, const T* object, std::ostream& ss) {
 		if (object) {
 			auto id = SafeGetObjectId(object);
 			auto source = SafeGetSourceFile(object);
-			log::getLog() << "  " << title << ": " << (id ? id : "<memory corrupted>") << " (" << (source ? source : "<memory corrupted>") << ")" << std::endl;
+			ss << "  " << title << ": " << (id ? id : "<memory corrupted>") << " (" << (source ? source : "<memory corrupted>") << ")\n";
 			if (id) {
-				log::prettyDump(object);
+				log::prettyDump(object, ss);
 			}
 		}
 		else {
-			log::getLog() << "  " << title << ": nullptr" << std::endl;
+			ss << "  " << title << ": nullptr\n";
 		}
 	}
 
@@ -2089,28 +2094,6 @@ namespace mwse::patch {
 	}
 
 	void CreateMiniDump(EXCEPTION_POINTERS* pep) {
-		log::getLog() << std::dec << std::endl;
-		log::getLog() << "Morrowind has crashed! To help improve game stability, send MWSE_Minidump.dmp and mwse.log to the #mwse channel at the Morrowind Modding Community Discord: https://discord.me/mwmods" << std::endl;
-
-		// Try to print any relevant mwscript information.
-		if (TES3::Script::currentlyExecutingScript) {
-			log::getLog() << "Currently executing mwscript context:" << std::endl;
-			safePrintObjectToLog("Script", TES3::Script::currentlyExecutingScript);
-			safePrintObjectToLog("Reference", TES3::Script::currentlyExecutingScriptReference);
-			log::getLog() << "  OpCode: 0x" << std::hex << *reinterpret_cast<DWORD*>(0x7A91C4) << std::endl;
-			log::getLog() << "  Cursor Offset: 0x" << std::hex << *reinterpret_cast<DWORD*>(0x7CEBB0) << std::endl;
-		}
-
-		// Show if we failed to load a mesh.
-		if (!TES3::DataHandler::currentlyLoadingMeshes.empty()) {
-			TES3::DataHandler::currentlyLoadingMeshesMutex.lock();
-			const auto worldController = TES3::WorldController::get();
-			for (const auto& itt : TES3::DataHandler::currentlyLoadingMeshes) {
-				log::getLog() << "Currently loading mesh: " << itt.second << "; Thread: " << GetThreadName(itt.first) << std::endl;
-			}
-			TES3::DataHandler::currentlyLoadingMeshesMutex.unlock();
-		}
-
 		// Open the file.
 		auto hFile = CreateFile("MWSE_MiniDump.dmp", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
@@ -2148,36 +2131,37 @@ namespace mwse::patch {
 		else {
 			log::getLog() << "MiniDump creation failed. Could not get file handle. Error: " << GetLastError() << std::endl;
 		}
-
-		if constexpr (CrashLogger::DEBUG_LOGGER) {
-			log::getLog() << "Attempting To Log Crash \n";
-		}
-		CrashLogger::AttemptLog(pep);
 	}
 
-	int __stdcall onWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
+	static void ResetGamma() {
 		__try {
-			return reinterpret_cast<int(__stdcall*)(HINSTANCE, HINSTANCE, LPSTR, int)>(0x416E10)(hInstance, hPrevInstance, lpCmdLine, nShowCmd);
-		}
-		__except (CreateMiniDump(GetExceptionInformation()), EXCEPTION_EXECUTE_HANDLER) {
-			// Try to reset gamma.
 			auto game = TES3::Game::get();
 			if (game) {
 				game->setGamma(1.0f);
 			}
-
-			return 0;
 		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {}
+	}
 
+	LONG WINAPI MWSEUnhandledExceptionFilter(__in  struct _EXCEPTION_POINTERS* info) {
+		log::getLog() << std::dec << std::endl;
+		log::getLog() << "Morrowind has crashed! To help improve game stability, send mwse.log to the #mwse channel at the Morrowind Modding Community Discord: https://discord.me/mwmods" << std::endl;
+
+		ResetGamma();
+
+		CreateMiniDump(info);
+		
+		if constexpr (CrashLogger::DEBUG_LOGGER) {
+			log::getLog() << "Attempting To Log Crash \n";
+		}
+		return CrashLogger::Filter(info);
 	}
 
 	bool installMiniDumpHook() {
 		if constexpr (INSTALL_MINIDUMP_HOOK) {
 			CrashLogger::Playtime::Init();
-			return genCallEnforced(0x7279AD, 0x416E10, reinterpret_cast<DWORD>(onWinMain));
+			CrashLogger::s_originalFilter = SetUnhandledExceptionFilter(MWSEUnhandledExceptionFilter);
 		}
-		else {
-			return true;
-		}
+		return true;
 	}
 }

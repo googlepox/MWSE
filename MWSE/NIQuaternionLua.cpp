@@ -7,8 +7,8 @@
 
 void mwse::lua::bindNIQuaternion() {
 	// Get our lua state.
-	auto stateHandle = LuaManager::getInstance().getThreadSafeStateHandle();
-	auto& state = stateHandle.state;
+	const auto stateHandle = LuaManager::getInstance().getThreadSafeStateHandle();
+	auto& state = stateHandle.getState();
 
 	// NiQuaternion
 	{
